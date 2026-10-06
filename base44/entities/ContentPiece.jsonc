@@ -1,0 +1,86 @@
+{
+  "name": "ContentPiece",
+  "type": "object",
+  "properties": {
+    "campaign_id": {
+      "type": "string",
+      "description": "Reference to Campaign"
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Reference to Business"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "post",
+        "story",
+        "reel",
+        "short_video",
+        "google_ad"
+      ],
+      "description": "Content type"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "facebook",
+        "tiktok",
+        "youtube",
+        "google"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "string",
+      "description": "Post caption / copy text"
+    },
+    "hashtags": {
+      "type": "string",
+      "description": "Suggested hashtags"
+    },
+    "image_prompt": {
+      "type": "string",
+      "description": "AI image generation prompt"
+    },
+    "generated_image_url": {
+      "type": "string",
+      "description": "URL of generated image"
+    },
+    "video_script": {
+      "type": "string",
+      "description": "Video / reel script"
+    },
+    "generated_video_url": {
+      "type": "string",
+      "description": "URL of AI-generated video"
+    },
+    "hook": {
+      "type": "string",
+      "description": "Opening hook line"
+    },
+    "call_to_action": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "published"
+      ],
+      "default": "draft"
+    }
+  },
+  "required": [
+    "campaign_id",
+    "type",
+    "platform"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "Campaign",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to Business"
+    },
+    "name": {
+      "type": "string",
+      "description": "Campaign name"
+    },
+    "goal": {
+      "type": "string",
+      "enum": [
+        "brand_awareness",
+        "lead_generation",
+        "sales_conversion",
+        "community_engagement",
+        "product_launch",
+        "event_promotion",
+        "customer_retention"
+      ],
+      "description": "Primary campaign goal"
+    },
+    "strategy": {
+      "type": "string",
+      "description": "Selected marketing strategy"
+    },
+    "strategy_details": {
+      "type": "string",
+      "description": "AI-generated strategy details"
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "instagram",
+          "facebook",
+          "tiktok",
+          "youtube",
+          "google"
+        ]
+      }
+    },
+    "duration_weeks": {
+      "type": "number",
+      "default": 4
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "active",
+        "paused",
+        "completed"
+      ],
+      "default": "planning"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "business_id",
+    "name"
+  ]
+}

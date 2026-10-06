@@ -1,0 +1,79 @@
+{
+  "name": "Business",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Business name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Business description"
+    },
+    "website": {
+      "type": "string",
+      "description": "Business website URL"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Industry/niche"
+    },
+    "target_audience": {
+      "type": "string",
+      "description": "Target audience description"
+    },
+    "tone": {
+      "type": "string",
+      "enum": [
+        "professional",
+        "casual",
+        "playful",
+        "luxury",
+        "inspirational",
+        "educational"
+      ],
+      "default": "professional"
+    },
+    "social_links": {
+      "type": "object",
+      "properties": {
+        "instagram": {
+          "type": "string"
+        },
+        "facebook": {
+          "type": "string"
+        },
+        "tiktok": {
+          "type": "string"
+        },
+        "youtube": {
+          "type": "string"
+        },
+        "google_business": {
+          "type": "string"
+        }
+      }
+    },
+    "brand_colors": {
+      "type": "string",
+      "description": "Brand colors (hex codes or descriptions)"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "brand_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Uploaded brand reference images used for AI image/video generation"
+    },
+    "analysis": {
+      "type": "string",
+      "description": "AI-generated business analysis"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

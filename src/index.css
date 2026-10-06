@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 20% 7%;
+    --foreground: 210 20% 95%;
+    --card: 222 18% 10%;
+    --card-foreground: 210 20% 95%;
+    --popover: 222 18% 11%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 258 90% 66%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 16% 15%;
+    --secondary-foreground: 210 20% 80%;
+    --muted: 222 16% 14%;
+    --muted-foreground: 215 15% 50%;
+    --accent: 258 70% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 16% 18%;
+    --input: 222 16% 16%;
+    --ring: 258 90% 66%;
+    --radius: 0.75rem;
+
+    --neon: 258 90% 66%;
+    --neon-cyan: 185 100% 60%;
+    --neon-pink: 320 80% 60%;
+    --surface: 222 18% 12%;
+    --surface-2: 222 16% 15%;
+
+    --font-inter: 'Inter', sans-serif;
+    --font-space: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-inter;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-space);
+  }
+}
+
+@layer utilities {
+  .font-inter { font-family: var(--font-inter); }
+  .font-space { font-family: var(--font-space); }
+
+  .glow-purple {
+    box-shadow: 0 0 20px hsl(258 90% 66% / 0.3);
+  }
+  .glow-purple-sm {
+    box-shadow: 0 0 10px hsl(258 90% 66% / 0.2);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(258 90% 75%), hsl(185 100% 70%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .border-gradient {
+    border: 1px solid transparent;
+    background: linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+                linear-gradient(135deg, hsl(var(--neon)), hsl(var(--neon-cyan))) border-box;
+  }
+  .bg-surface {
+    background-color: hsl(var(--surface));
+  }
+  .bg-surface-2 {
+    background-color: hsl(var(--surface-2));
+  }
+}
