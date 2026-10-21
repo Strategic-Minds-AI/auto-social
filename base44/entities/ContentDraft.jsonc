@@ -1,0 +1,132 @@
+{
+  "name": "ContentDraft",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to Business"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "facebook",
+        "linkedin",
+        "x",
+        "tiktok",
+        "youtube"
+      ]
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "post",
+        "story",
+        "reel",
+        "short_video",
+        "image"
+      ],
+      "default": "post"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "create",
+        "rewrite",
+        "variation"
+      ],
+      "default": "create",
+      "description": "How the draft was produced"
+    },
+    "brief": {
+      "type": "string",
+      "description": "The topic or instruction the draft was generated from"
+    },
+    "tone": {
+      "type": "string"
+    },
+    "audience": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "hook": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "string"
+    },
+    "hashtags": {
+      "type": "string"
+    },
+    "call_to_action": {
+      "type": "string"
+    },
+    "image_prompt": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "ai_provider": {
+      "type": "string",
+      "description": "Engine host that generated this draft"
+    },
+    "ai_model": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "platform",
+    "caption"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

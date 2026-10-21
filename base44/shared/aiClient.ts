@@ -1,5 +1,12 @@
 import { secrets } from "base44:runtime";
 
+// One OpenAI-compatible call serves every provider behind the gateway (Groq,
+// Ollama, vLLM, OpenRouter). The caller's own account pays, never Base44 credits.
+const DEFAULT_MAX_TOKENS = 4000;
+const MAX_ATTEMPTS = 3;
+const REQUEST_TIMEOUT_MS = 120000;
+const RETRY_STATUSES = [408, 425, 429, 500, 502, 503, 504];
+
 function getSecret(name) {
   try {
     return secrets.get(name) || "";
@@ -8,60 +15,153 @@ function getSecret(name) {
   }
 }
 
-// One OpenAI-compatible call serves every provider: Groq, Ollama on Railway,
-// OpenRouter, vLLM. The caller's own account pays, not Base44 integration credits.
-async function callProvider(baseUrl, apiKey, model, prompt, schema) {
-  const response = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+export function aiConfig() {
+  const baseUrl = getSecret("AI_BASE_URL").replace(/\/+$/, "");
+  const apiKey = getSecret("AI_API_KEY");
+  const model = getSecret("AI_MODEL");
+  return { baseUrl, apiKey, model, configured: Boolean(baseUrl && apiKey && model) };
+}
+
+// Which engine actually served the request — surfaced on every result so a
+// silent fallback to Base44's own credits can never go unnoticed.
+export function aiProviderHost() {
+  const { baseUrl } = aiConfig();
+  if (!baseUrl) return "not configured";
+  try {
+    return new URL(baseUrl).host;
+  } catch {
+    return "configured endpoint";
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Never let a raw upstream body leak into a UI message.
+function sanitize(message, limit = 300) {
+  return String(message == null ? "" : message)
+    .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer ***")
+    .replace(/(sk|key|token)[-_][A-Za-z0-9]{8,}/gi, "***")
+    .slice(0, limit);
+}
+
+function parseJsonContent(content) {
+  const raw = String(content).trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "").trim();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start !== -1 && end > start) {
+      return JSON.parse(raw.slice(start, end + 1));
+    }
+    throw new Error("AI returned a response that was not valid JSON");
+  }
+}
+
+async function postChat(config, body) {
+  const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey || "none"}`,
+      Authorization: `Bearer ${config.apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You reply with one valid JSON object and nothing else. Never wrap it in markdown or add commentary.",
-        },
-        {
-          role: "user",
-          content: `${prompt}\n\nReturn JSON that matches this schema exactly:\n${JSON.stringify(schema)}`,
-        },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.8,
-    }),
-    signal: AbortSignal.timeout(120000),
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
-
-  if (!response.ok) {
-    throw new Error(`AI provider returned ${response.status}: ${(await response.text()).slice(0, 300)}`);
-  }
-
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content;
-  if (!content) throw new Error("AI provider returned an empty response");
-  return JSON.parse(content);
+  return { ok: response.ok, status: response.status, text: await response.text() };
 }
 
-// Which engine the last run actually used — surfaced so a silent fallback to
-// Base44's credits can never go unnoticed.
-export function aiProviderHost() {
-  const baseUrl = getSecret("AI_BASE_URL");
-  return baseUrl ? baseUrl.replace(/^https?:\/\//, "").split("/")[0] : "Base44 AI";
-}
-
-export async function generateJson(_base44, { prompt, schema }) {
-  const baseUrl = getSecret("AI_BASE_URL");
-  const apiKey = getSecret("AI_API_KEY");
-  const model = getSecret("AI_MODEL");
-
-  if (!baseUrl || !apiKey || !model) {
-    throw new Error("External AI is not fully configured. Set AI_BASE_URL, AI_API_KEY and AI_MODEL in Base44 secrets. No paid fallback was used.");
-  }
+/**
+ * Structured generation against the configured gateway.
+ * Returns { data, meta } so callers can report the engine, model and token usage.
+ */
+export async function generateJsonWithMeta(_base44, { prompt, schema, maxTokens, system, temperature = 0.8 }) {
+  const config = aiConfig();
 
   // Fail closed: never silently consume Base44 AI integration credits.
-  return callProvider(baseUrl, apiKey, model, prompt, schema);
+  if (!config.configured) {
+    throw new Error(
+      "External AI is not fully configured. Set AI_BASE_URL, AI_API_KEY and AI_MODEL in the app secrets. No paid fallback was used."
+    );
+  }
+
+  const body = {
+    model: config.model,
+    messages: [
+      {
+        role: "system",
+        content:
+          system ||
+          "You reply with one valid JSON object and nothing else. Never wrap it in markdown or add commentary.",
+      },
+      {
+        role: "user",
+        content: `${prompt}\n\nReturn JSON that matches this schema exactly:\n${JSON.stringify(schema)}`,
+      },
+    ],
+    response_format: { type: "json_object" },
+    temperature,
+    // The gateway models reason before they answer, so an explicit ceiling is
+    // required — too low and the response comes back with empty content.
+    max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
+  };
+
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const { ok, status, text } = await postChat(config, body);
+
+      if (!ok) {
+        const retryable = RETRY_STATUSES.includes(status);
+        const error = new Error(
+          retryable
+            ? `AI gateway is temporarily unavailable (HTTP ${status})`
+            : `AI gateway rejected the request (HTTP ${status}): ${sanitize(text, 200)}`
+        );
+        if (!retryable) throw error;
+        lastError = error;
+      } else {
+        const payload = JSON.parse(text);
+        const content = payload?.choices?.[0]?.message?.content;
+        const finish = payload?.choices?.[0]?.finish_reason;
+
+        if (!content || !String(content).trim()) {
+          lastError = new Error(
+            finish === "length"
+              ? "AI ran out of tokens before producing a result. Try fewer items or a shorter brief."
+              : "AI returned an empty response"
+          );
+        } else {
+          return {
+            data: parseJsonContent(content),
+            meta: {
+              provider: aiProviderHost(),
+              model: config.model,
+              attempts: attempt,
+              prompt_tokens: payload?.usage?.prompt_tokens ?? null,
+              completion_tokens: payload?.usage?.completion_tokens ?? null,
+              total_tokens: payload?.usage?.total_tokens ?? null,
+            },
+          };
+        }
+      }
+    } catch (error) {
+      lastError = new Error(sanitize(error?.message || error));
+    }
+
+    if (attempt < MAX_ATTEMPTS) {
+      await sleep(500 * 2 ** (attempt - 1));
+    }
+  }
+
+  throw lastError || new Error("AI request failed");
+}
+
+/** Backwards-compatible shape: the parsed object only. */
+export async function generateJson(base44, options) {
+  const { data } = await generateJsonWithMeta(base44, options);
+  return data;
 }
