@@ -17,6 +17,8 @@ import Studio from '@/pages/Studio';
 import Calendar from '@/pages/Calendar';
 import ApprovalQueue from '@/pages/ApprovalQueue';
 import SocialAccounts from '@/pages/SocialAccounts';
+import Dashboard from '@/pages/Dashboard';
+import Assistant from '@/pages/Assistant';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,8 +42,10 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/businesses" replace />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route element={<AppShell />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/assistant" element={<Assistant />} />
         <Route path="/businesses" element={<Businesses />} />
         <Route path="/businesses/new" element={<BusinessForm />} />
         <Route path="/businesses/edit/:id" element={<BusinessForm />} />
