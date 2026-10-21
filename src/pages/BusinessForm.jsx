@@ -26,6 +26,7 @@ export default function BusinessForm() {
   const [analysing, setAnalysing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [analysis, setAnalysis] = useState('');
+  const [researchNote, setResearchNote] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
@@ -58,29 +59,20 @@ export default function BusinessForm() {
 
   const handleAnalyse = async () => {
     setAnalysing(true);
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a senior social media marketing strategist. Analyse this business and provide a detailed marketing profile.
-
-Business Name: ${form.name}
-Description: ${form.description}
-Website: ${form.website}
-Industry: ${form.industry}
-Target Audience: ${form.target_audience}
-Brand Tone: ${form.tone}
-Social Presence: Instagram: ${form.social_links?.instagram || 'none'}, Facebook: ${form.social_links?.facebook || 'none'}, TikTok: ${form.social_links?.tiktok || 'none'}
-
-Provide:
-1. Business positioning summary
-2. Target audience insights
-3. Key value propositions for social media
-4. Recommended content pillars (5 topics this brand should consistently post about)
-5. Competitive advantages to highlight
-6. Brand voice guidelines
-
-Be specific, insightful and actionable. Format with clear sections.`,
-      add_context_from_internet: !!form.website,
+    // Runs on the app's own AI gateway. When a website is given, the page is
+    // genuinely fetched server-side and its text supplied to the model.
+    const result = await base44.functions.invoke('generateText', {
+      task: 'business_analysis',
+      name: form.name,
+      description: form.description,
+      website: form.website,
+      industry: form.industry,
+      target_audience: form.target_audience,
+      tone: form.tone,
+      brand_colors: form.brand_colors,
     });
-    setAnalysis(result);
+    setAnalysis(result.data?.analysis || '');
+    setResearchNote(result.data?.website_note || '');
     setAnalysing(false);
   };
 
@@ -209,6 +201,11 @@ Be specific, insightful and actionable. Format with clear sections.`,
               {analysing ? 'Analysing...' : 'Analyse Business'}
             </Button>
           </div>
+          {researchNote && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Globe className="w-3 h-3" /> {researchNote}
+            </p>
+          )}
           {analysis ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="bg-secondary/50 rounded-lg p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed">

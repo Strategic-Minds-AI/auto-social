@@ -1,0 +1,99 @@
+{
+  "name": "SocialAccount",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this account publishes for"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "facebook",
+        "instagram",
+        "linkedin",
+        "x",
+        "tiktok",
+        "youtube"
+      ],
+      "default": "facebook"
+    },
+    "external_id": {
+      "type": "string",
+      "description": "Platform account or Page id"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the connected Page or account"
+    },
+    "business_manager_id": {
+      "type": "string",
+      "description": "Meta Business Manager id this Page belongs to, when applicable"
+    },
+    "business_manager_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "needs_reauth",
+        "unavailable"
+      ],
+      "default": "connected"
+    },
+    "last_verified_at": {
+      "type": "string",
+      "description": "Last time the connection was confirmed working"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "platform",
+    "external_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

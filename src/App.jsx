@@ -14,6 +14,9 @@ import CampaignDetail from '@/pages/CampaignDetail';
 import Content from '@/pages/Content';
 import AutoSocial from '@/pages/AutoSocial';
 import Studio from '@/pages/Studio';
+import Calendar from '@/pages/Calendar';
+import ApprovalQueue from '@/pages/ApprovalQueue';
+import SocialAccounts from '@/pages/SocialAccounts';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -48,6 +51,9 @@ const AuthenticatedApp = () => {
         <Route path="/content" element={<Content />} />
         <Route path="/studio" element={<Studio />} />
         <Route path="/auto-social" element={<AutoSocial />} />
+        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/approval-queue" element={<ApprovalQueue />} />
+        <Route path="/social-accounts" element={<SocialAccounts />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

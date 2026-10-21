@@ -39,29 +39,17 @@ export default function ContentPieceCard({ piece, onDelete, onUpdate, business }
 
     const brandImageUrls = business?.brand_images?.length ? business.brand_images.slice(0, 3) : null;
 
-    const optimizedPrompt = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an expert at writing prompts for AI video generators (like Veo/Sora).
-Convert the following video script into a single, detailed, cinematic video generation prompt.
-
-Rules:
-- NO text overlays, NO titles, NO subtitles, NO captions — AI video generators render text poorly
-- Describe only VISUAL scenes: what is seen, camera movement, lighting, mood, style
-- Be hyper-specific about subjects, actions, colors, textures, environment
-- Use cinematic language: "slow dolly shot", "golden hour lighting", "shallow depth of field", "4K hyperrealistic"
-- Keep it to 2-4 rich descriptive sentences — no narration, no dialogue
-- Platform: ${piece.platform}, tone: ${business?.tone || 'professional'}
-- Brand colors: ${business?.brand_colors || 'modern palette'}
-${brandImageUrls ? '- The brand reference images show the actual product/style — match their look and feel closely.' : ''}
-
-Script:
-${piece.video_script}
-
-Output ONLY the video prompt, nothing else.`,
-      file_urls: brandImageUrls,
+    // Prompt conversion runs on the app's own AI gateway. Video rendering itself
+    // stays on the existing configured integration.
+    const optimized = await base44.functions.invoke('generateText', {
+      task: 'video_prompt',
+      business_id: business?.id,
+      script: piece.video_script,
+      platform: piece.platform,
     });
 
     const result = await base44.integrations.Core.GenerateVideo({
-      prompt: optimizedPrompt,
+      prompt: optimized.data.prompt,
       aspect_ratio: piece.platform === 'youtube' ? '16:9' : '9:16',
     });
     await base44.entities.ContentPiece.update(piece.id, { generated_video_url: result.url });

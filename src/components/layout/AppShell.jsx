@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Zap, Building2, Megaphone, FileText, CalendarClock, ChevronDown, Plus, Menu, X, Sparkles } from 'lucide-react';
+import { Zap, Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
 
 const navItems = [
   { label: 'Businesses', path: '/businesses', icon: Building2 },
   { label: 'Campaigns', path: '/campaigns', icon: Megaphone },
-  { label: 'Content', path: '/content', icon: FileText },
   { label: 'Content Studio', path: '/studio', icon: Sparkles },
+  { label: 'Calendar', path: '/calendar', icon: CalendarDays },
+  { label: 'Approval Queue', path: '/approval-queue', icon: ListChecks },
+  { label: 'Social Accounts', path: '/social-accounts', icon: Share2 },
   { label: 'Auto Social', path: '/auto-social', icon: CalendarClock },
+  { label: 'Content Library', path: '/content', icon: FileText },
 ];
 
 export default function AppShell() {

@@ -6,6 +6,18 @@
       "type": "string",
       "description": "Reference to Business"
     },
+    "campaign_id": {
+      "type": "string",
+      "description": "Optional Campaign this post belongs to"
+    },
+    "content_draft_id": {
+      "type": "string",
+      "description": "Optional ContentDraft this post was promoted from"
+    },
+    "social_account_id": {
+      "type": "string",
+      "description": "SocialAccount this post publishes through"
+    },
     "platform": {
       "type": "string",
       "enum": [
@@ -28,11 +40,20 @@
     "scheduled_date": {
       "type": "string",
       "format": "date",
-      "description": "Day the post goes out"
+      "description": "Local calendar day the post goes out"
     },
     "scheduled_time": {
       "type": "string",
       "description": "Local posting time, e.g. 09:00"
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA timezone the date and time are expressed in",
+      "default": "America/New_York"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "description": "Derived UTC instant this post becomes due"
     },
     "pillar": {
       "type": "string",
@@ -61,7 +82,7 @@
     },
     "image_url": {
       "type": "string",
-      "description": "Generated image URL"
+      "description": "Attached image URL"
     },
     "video_script": {
       "type": "string",
@@ -88,11 +109,49 @@
       "type": "string",
       "enum": [
         "planned",
+        "approved",
         "scheduled",
+        "publishing",
         "published",
-        "failed"
+        "failed",
+        "cancelled"
       ],
       "default": "planned"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Email of the user who approved this post"
+    },
+    "approved_at": {
+      "type": "string"
+    },
+    "approval_note": {
+      "type": "string"
+    },
+    "cancelled_reason": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Stable key that prevents the same post being published twice"
+    },
+    "lock_token": {
+      "type": "string",
+      "description": "Set while a publishing run holds this post"
+    },
+    "locked_at": {
+      "type": "string"
+    },
+    "publish_attempts": {
+      "type": "number",
+      "default": 0
+    },
+    "max_attempts": {
+      "type": "number",
+      "default": 3
+    },
+    "last_attempt_at": {
+      "type": "string"
     },
     "publish_error": {
       "type": "string"
@@ -100,6 +159,30 @@
     "external_post_id": {
       "type": "string",
       "description": "ID returned by the platform after publishing"
+    },
+    "published_at": {
+      "type": "string"
+    },
+    "published_url": {
+      "type": "string"
+    },
+    "publish_history": {
+      "type": "array",
+      "description": "Receipt trail of approval, publishing attempts and failures",
+      "items": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "event": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
     },
     "notes": {
       "type": "string"

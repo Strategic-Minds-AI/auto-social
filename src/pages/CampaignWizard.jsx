@@ -56,43 +56,13 @@ export default function CampaignWizard() {
     setGeneratingStrategies(true);
     setStep(2);
     const goal = GOALS.find(g => g.id === selectedGoal);
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a senior social media strategist. Recommend 3 tailored marketing strategies for this business and goal.
-
-Business: ${activeBusiness?.name}
-Industry: ${activeBusiness?.industry || 'General'}
-Description: ${activeBusiness?.description || 'Not provided'}
-Target Audience: ${activeBusiness?.target_audience || 'General audience'}
-Brand Tone: ${activeBusiness?.tone || 'professional'}
-Campaign Goal: ${goal?.label}
-Platforms: ${selectedPlatforms.join(', ')}
-
-For each strategy provide:
-- Strategy Name
-- Core Approach (1-2 sentences)
-- Key Tactics (3 bullet points)
-- Expected Outcome
-
-Format as JSON array with fields: name, approach, tactics (array of strings), outcome`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          strategies: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                name: { type: 'string' },
-                approach: { type: 'string' },
-                tactics: { type: 'array', items: { type: 'string' } },
-                outcome: { type: 'string' }
-              }
-            }
-          }
-        }
-      }
+    const result = await base44.functions.invoke('generateText', {
+      task: 'campaign_strategies',
+      business_id: activeBusiness.id,
+      goal: selectedGoal,
+      platforms: selectedPlatforms,
     });
-    setAiStrategies(result.strategies || []);
+    setAiStrategies(result.data?.strategies || []);
     setGeneratingStrategies(false);
   };
 

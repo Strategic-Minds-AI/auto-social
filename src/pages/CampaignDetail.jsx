@@ -53,65 +53,15 @@ export default function CampaignDetail() {
     setShowGenerate(false);
     const { platform, type, count } = options;
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a world-class social media content creator. Generate ${count} ${type} content pieces for ${platform}.
-
-Business: ${business?.name}
-Industry: ${business?.industry}
-Description: ${business?.description}
-Target Audience: ${business?.target_audience}
-Brand Tone: ${business?.tone}
-Brand Colors: ${business?.brand_colors}
-Campaign Goal: ${GOAL_LABELS[campaign?.goal] || campaign?.goal}
-Strategy: ${campaign?.strategy}
-Strategy Details: ${campaign?.strategy_details}
-
-For each content piece, provide:
-- title: catchy content title
-- caption: full engaging caption with line breaks and emojis (platform-optimised)
-- hashtags: 15-20 relevant hashtags as a string
-- hook: opening line/hook (especially important for video)
-- image_prompt: detailed AI image generation prompt (describe scene, style, mood, colors matching brand)
-- video_script: if type is reel/short_video/story, provide a 30-60 second script with [visual] and [text overlay] markers. For posts, leave empty.
-- call_to_action: specific CTA
-
-Platform: ${platform}
-Content Type: ${type}
-
-Return ${count} diverse, creative pieces that feel authentic and platform-native.`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          pieces: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                title: { type: 'string' },
-                caption: { type: 'string' },
-                hashtags: { type: 'string' },
-                hook: { type: 'string' },
-                image_prompt: { type: 'string' },
-                video_script: { type: 'string' },
-                call_to_action: { type: 'string' },
-              }
-            }
-          }
-        }
-      }
+    // Runs on the app's own AI gateway, not Base44 AI credits. The pieces are
+    // created server-side, so the list is simply reloaded afterwards.
+    await base44.functions.invoke('generateText', {
+      task: 'campaign_content',
+      campaign_id: id,
+      platform,
+      type,
+      count,
     });
-
-    const pieces = result.pieces || [];
-    await Promise.all(pieces.map(p =>
-      base44.entities.ContentPiece.create({
-        campaign_id: id,
-        business_id: campaign.business_id,
-        platform,
-        type,
-        ...p,
-        status: 'draft',
-      })
-    ));
     await load();
     setGenerating(false);
   };

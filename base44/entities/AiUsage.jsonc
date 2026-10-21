@@ -1,0 +1,72 @@
+{
+  "name": "AiUsage",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "App user this usage belongs to"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "day": {
+      "type": "string",
+      "description": "UTC day bucket, YYYY-MM-DD"
+    },
+    "calls": {
+      "type": "number",
+      "default": 0,
+      "description": "AI requests made today"
+    },
+    "tokens": {
+      "type": "number",
+      "default": 0,
+      "description": "Total tokens consumed today"
+    }
+  },
+  "required": [
+    "user_id",
+    "day"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
