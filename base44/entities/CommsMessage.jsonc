@@ -1,0 +1,103 @@
+{
+  "name": "CommsMessage",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this conversation belongs to"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "App user who owns this conversation; set server-side so inbound texts are visible to the right owner"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "in",
+        "out"
+      ],
+      "description": "Inbound from the owner's phone, or outbound from the app"
+    },
+    "counterparty": {
+      "type": "string",
+      "description": "The mobile number on the other side of the message"
+    },
+    "body": {
+      "type": "string",
+      "description": "Message text"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "test",
+        "alert",
+        "manual",
+        "command",
+        "opt_in",
+        "opt_out",
+        "help",
+        "unknown"
+      ],
+      "default": "manual"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "sent",
+        "delivered",
+        "failed",
+        "received"
+      ],
+      "default": "sent"
+    },
+    "twilio_sid": {
+      "type": "string",
+      "description": "Twilio message id, used to ignore duplicate webhook deliveries"
+    },
+    "related_post_id": {
+      "type": "string",
+      "description": "ScheduledPost this message was about, when applicable"
+    },
+    "error": {
+      "type": "string",
+      "description": "Why a send failed"
+    }
+  },
+  "required": [
+    "direction",
+    "body"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

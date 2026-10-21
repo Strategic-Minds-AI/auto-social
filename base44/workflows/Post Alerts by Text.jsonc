@@ -1,0 +1,41 @@
+{
+  "name": "Post Alerts by Text",
+  "description": "Texts the business owner the moment one of their posts goes live or finally fails to publish.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "ScheduledPost",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ (.trigger.data.status == \"published\" or .trigger.data.status == \"failed\") and .trigger.old_data.status != .trigger.data.status }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "post_alerts_by_text",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "send_alert": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendSms",
+            "args": {
+              "post_id": "${ .trigger.entity_id }",
+              "kind": "alert"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Text the owner",
+            "description": "Publish result"
+          }
+        }
+      }
+    ]
+  }
+}

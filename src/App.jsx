@@ -19,6 +19,7 @@ import ApprovalQueue from '@/pages/ApprovalQueue';
 import SocialAccounts from '@/pages/SocialAccounts';
 import Dashboard from '@/pages/Dashboard';
 import Assistant from '@/pages/Assistant';
+import TextAlerts from '@/pages/TextAlerts';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/approval-queue" element={<ApprovalQueue />} />
         <Route path="/social-accounts" element={<SocialAccounts />} />
+        <Route path="/text-alerts" element={<TextAlerts />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

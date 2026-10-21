@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot } from 'lucide-react';
+import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
 
@@ -18,6 +18,7 @@ const navItems = [
   { label: 'Auto Social', path: '/auto-social', icon: CalendarClock },
   { label: 'Content Library', path: '/content', icon: FileText },
   { label: 'Eden Skye', path: '/assistant', icon: Bot },
+  { label: 'Text Alerts', path: '/text-alerts', icon: MessageSquare },
 ];
 
 export default function AppShell() {

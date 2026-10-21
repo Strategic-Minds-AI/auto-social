@@ -71,6 +71,20 @@
     "analysis": {
       "type": "string",
       "description": "AI-generated business analysis"
+    },
+    "notification_phone": {
+      "type": "string",
+      "description": "Mobile number that receives text alerts and can reply to approve posts"
+    },
+    "sms_alerts": {
+      "type": "boolean",
+      "default": false,
+      "description": "Send a text when one of this business's posts goes live or fails"
+    },
+    "sms_opt_out": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set when the owner replies STOP from the notification phone"
     }
   },
   "required": [
