@@ -38,12 +38,31 @@
     },
     {
       "function_name": "generateText",
-      "description": "Write marketing copy for the app - a business analysis, campaign strategy ideas, or social post content - using the app's own AI gateway."
+      "description": "Write marketing copy - a business analysis, campaign strategies, or social post content - using the app's own AI gateway."
     },
     {
       "function_name": "manageScheduledPost",
-      "description": "Read, approve, cancel, schedule or reschedule a post on the content calendar. Schedules in the business's own timezone."
+      "description": "Read, approve, cancel, schedule or reschedule a post on the content calendar, in the business's own timezone."
     }
   ],
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "whatsapp_greeting": null,
+  "telegram_greeting": null,
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
+  "voice_config": {
+    "voice_id": null
+  },
+  "emails_settings": null,
+  "allow_anonymous_access": false,
   "name": "social_assistant"
 }
