@@ -6,9 +6,9 @@ import CalendarToolbar from '@/components/calendar/CalendarToolbar';
 import MonthGrid, { monthMatrix, dateKey } from '@/components/calendar/MonthGrid';
 import WeekGrid from '@/components/calendar/WeekGrid';
 import StatusBadge from '@/components/scheduling/StatusBadge';
-import PostActionBar from '@/components/scheduling/PostActionBar';
+import PostDetailPanel from '@/components/calendar/PostDetailPanel';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, Loader2, X, ExternalLink, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Loader2 } from 'lucide-react';
 
 const STATUS_LEGEND = [
   { key: 'planned', label: 'Needs review' },
@@ -177,68 +177,13 @@ export default function Calendar() {
               </p>
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-space font-semibold truncate">{selected.title || 'Untitled post'}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <StatusBadge status={selected.status} />
-                    <span className="text-xs text-muted-foreground capitalize">{selected.platform}</span>
-                  </div>
-                </div>
-                <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground shrink-0">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {selected.scheduled_at && (
-                <p className="text-xs text-muted-foreground">
-                  Due {new Date(selected.scheduled_at).toLocaleString()} ({selected.timezone})
-                </p>
-              )}
-
-              {selected.hook && (
-                <p className="text-xs text-primary bg-primary/5 border border-primary/15 rounded-lg px-3 py-2">{selected.hook}</p>
-              )}
-
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap max-h-56 overflow-auto">{selected.caption || 'No caption yet.'}</p>
-
-              {selected.publish_error && (
-                <p className="text-xs text-destructive flex gap-1.5 bg-destructive/10 border border-destructive/20 rounded-lg p-2.5">
-                  <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" /> {selected.publish_error}
-                </p>
-              )}
-
-              <div className="pt-3 border-t border-border">
-                <PostActionBar
-                  post={selected}
-                  accounts={accounts}
-                  onChanged={handleChanged}
-                  onDeleted={handleDeleted}
-                />
-              </div>
-
-              {Array.isArray(selected.publish_history) && selected.publish_history.length > 0 && (
-                <div className="pt-3 border-t border-border">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">History</p>
-                  <div className="space-y-1.5 max-h-40 overflow-auto">
-                    {selected.publish_history.slice().reverse().map((entry, i) => (
-                      <div key={i} className="text-xs text-muted-foreground">
-                        <span className="text-foreground">{entry.event}</span> · {new Date(entry.at).toLocaleString()}
-                        {entry.message ? <span className="block text-muted-foreground/80">{entry.message}</span> : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selected.published_url && (
-                <a href={selected.published_url} target="_blank" rel="noreferrer"
-                  className="text-xs text-primary flex items-center gap-1.5 hover:underline">
-                  <ExternalLink className="w-3 h-3" /> Open the live post
-                </a>
-              )}
-            </div>
+            <PostDetailPanel
+              post={selected}
+              accounts={accounts}
+              onChanged={handleChanged}
+              onDeleted={handleDeleted}
+              onClose={() => setSelected(null)}
+            />
           )}
         </aside>
       </div>

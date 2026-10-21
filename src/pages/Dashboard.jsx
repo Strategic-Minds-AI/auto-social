@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
@@ -8,6 +8,7 @@ import EdenAvatar from '@/components/assistant/EdenAvatar';
 import StatTiles from '@/components/dashboard/StatTiles';
 import CampaignBoard from '@/components/dashboard/CampaignBoard';
 import UpcomingSchedule from '@/components/dashboard/UpcomingSchedule';
+import ContentCalendar from '@/components/dashboard/ContentCalendar';
 
 const QUEUED = ['approved', 'scheduled', 'publishing'];
 
@@ -24,47 +25,53 @@ export default function Dashboard() {
   const [campaigns, setCampaigns] = useState([]);
   const [posts, setPosts] = useState([]);
   const [pieces, setPieces] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [postStats, setPostStats] = useState({});
   const [pieceStats, setPieceStats] = useState({});
 
-  useEffect(() => {
-    if (!ready) return;
+  const requestRef = useRef(0);
+
+  // Reloadable so the calendar can refresh the board after a post is changed from
+  // inside it. Responses from a previous business must not overwrite the current one.
+  const load = useCallback(async () => {
+    const request = ++requestRef.current;
     if (!business?.id) {
       setLoading(false);
       return;
     }
-    let cancelled = false;
     setLoading(true);
 
-    Promise.all([
-      base44.entities.Campaign.filter(
-        { business_id: business.id, status: 'active' },
-        { sort: '-created_date', limit: 50 }
-      ),
-      base44.entities.ScheduledPost.filter(
-        { business_id: business.id },
-        { sort: 'scheduled_at', limit: 200 }
-      ),
-      base44.entities.ContentPiece.filter({ business_id: business.id }, { limit: 200 }),
-      base44.entities.ScheduledPost.aggregate({ query: { business_id: business.id }, groupBy: 'status' }),
-      base44.entities.ContentPiece.aggregate({ query: { business_id: business.id }, groupBy: 'status' }),
-    ])
-      .then(([campaignPage, postPage, piecePage, postAgg, pieceAgg]) => {
-        if (cancelled) return;
-        setCampaigns(campaignPage.items || []);
-        setPosts(postPage.items || []);
-        setPieces(piecePage.items || []);
-        setPostStats(toCounts(postAgg?.rows));
-        setPieceStats(toCounts(pieceAgg?.rows));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    try {
+      const [campaignPage, postPage, piecePage, accountPage, postAgg, pieceAgg] = await Promise.all([
+        base44.entities.Campaign.filter(
+          { business_id: business.id, status: 'active' },
+          { sort: '-created_date', limit: 50 }
+        ),
+        base44.entities.ScheduledPost.filter(
+          { business_id: business.id },
+          { sort: '-scheduled_at', limit: 200 }
+        ),
+        base44.entities.ContentPiece.filter({ business_id: business.id }, { limit: 200 }),
+        base44.entities.SocialAccount.filter({ business_id: business.id }, { limit: 50 }),
+        base44.entities.ScheduledPost.aggregate({ query: { business_id: business.id }, groupBy: 'status' }),
+        base44.entities.ContentPiece.aggregate({ query: { business_id: business.id }, groupBy: 'status' }),
+      ]);
+      if (request !== requestRef.current) return;
+      setCampaigns(campaignPage.items || []);
+      setPosts(postPage.items || []);
+      setPieces(piecePage.items || []);
+      setAccounts(accountPage.items || []);
+      setPostStats(toCounts(postAgg?.rows));
+      setPieceStats(toCounts(pieceAgg?.rows));
+    } finally {
+      if (request === requestRef.current) setLoading(false);
+    }
+  }, [business?.id]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [ready, business?.id]);
+  useEffect(() => {
+    if (!ready) return;
+    load();
+  }, [ready, load]);
 
   const upcoming = posts
     .filter((post) => QUEUED.includes(post.status))
@@ -124,6 +131,16 @@ export default function Dashboard() {
       </div>
 
       <StatTiles tiles={tiles} />
+
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-space font-semibold text-sm text-muted-foreground">Content flow</h2>
+          <Link to="/calendar" className="text-xs text-primary hover:underline">
+            Open full calendar
+          </Link>
+        </div>
+        <ContentCalendar posts={posts} accounts={accounts} onChanged={load} />
+      </section>
 
       <section>
         <h2 className="font-space font-semibold text-sm text-muted-foreground mb-3">Coming up next</h2>
