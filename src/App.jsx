@@ -20,6 +20,7 @@ import SocialAccounts from '@/pages/SocialAccounts';
 import Dashboard from '@/pages/Dashboard';
 import Assistant from '@/pages/Assistant';
 import TextAlerts from '@/pages/TextAlerts';
+import Leads from '@/pages/Leads';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,6 +47,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route element={<AppShell />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/leads" element={<Leads />} />
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/businesses" element={<Businesses />} />
         <Route path="/businesses/new" element={<BusinessForm />} />
