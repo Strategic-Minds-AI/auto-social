@@ -12,6 +12,7 @@ import Campaigns from '@/pages/Campaigns';
 import CampaignWizard from '@/pages/CampaignWizard';
 import CampaignDetail from '@/pages/CampaignDetail';
 import Content from '@/pages/Content';
+import AutoSocial from '@/pages/AutoSocial';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
         <Route path="/campaigns/new" element={<CampaignWizard />} />
         <Route path="/campaigns/:id" element={<CampaignDetail />} />
         <Route path="/content" element={<Content />} />
+        <Route path="/auto-social" element={<AutoSocial />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

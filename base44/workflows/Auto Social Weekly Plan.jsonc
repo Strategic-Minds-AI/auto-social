@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 6 * * 1",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Every Monday morning, tops up the Auto Social content calendar so each business always has 30 days of posts planned ahead. Skips any business that already has more than 14 days of runway.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "auto_social_weekly_plan",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "top_up_content_plans": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "generateAutoSocialPlan",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Top up content plans",
+            "description": "Plans the next 30 days for each business"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Auto Social Weekly Plan"
+}

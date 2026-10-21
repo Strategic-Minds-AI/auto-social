@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Zap, Building2, Megaphone, FileText, ChevronDown, Plus, Menu, X } from 'lucide-react';
+import { Zap, Building2, Megaphone, FileText, CalendarClock, ChevronDown, Plus, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
 
@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Businesses', path: '/businesses', icon: Building2 },
   { label: 'Campaigns', path: '/campaigns', icon: Megaphone },
   { label: 'Content', path: '/content', icon: FileText },
+  { label: 'Auto Social', path: '/auto-social', icon: CalendarClock },
 ];
 
 export default function AppShell() {

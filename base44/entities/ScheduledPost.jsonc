@@ -1,0 +1,154 @@
+{
+  "name": "ScheduledPost",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to Business"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "facebook",
+        "linkedin",
+        "x"
+      ]
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "post",
+        "story",
+        "reel",
+        "image"
+      ],
+      "default": "post"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Day the post goes out"
+    },
+    "scheduled_time": {
+      "type": "string",
+      "description": "Local posting time, e.g. 09:00"
+    },
+    "pillar": {
+      "type": "string",
+      "description": "Content pillar / theme this post belongs to"
+    },
+    "title": {
+      "type": "string"
+    },
+    "hook": {
+      "type": "string",
+      "description": "Opening hook line"
+    },
+    "caption": {
+      "type": "string",
+      "description": "Post caption / copy"
+    },
+    "hashtags": {
+      "type": "string"
+    },
+    "call_to_action": {
+      "type": "string"
+    },
+    "image_prompt": {
+      "type": "string",
+      "description": "AI image generation prompt"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Generated image URL"
+    },
+    "video_script": {
+      "type": "string",
+      "description": "Script for reels / short video"
+    },
+    "variant_b_caption": {
+      "type": "string",
+      "description": "Alternate caption used for A/B testing"
+    },
+    "ab_test": {
+      "type": "boolean",
+      "default": false
+    },
+    "ab_result": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "variant_a",
+        "variant_b"
+      ],
+      "default": "pending"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "scheduled",
+        "published",
+        "failed"
+      ],
+      "default": "planned"
+    },
+    "publish_error": {
+      "type": "string"
+    },
+    "external_post_id": {
+      "type": "string",
+      "description": "ID returned by the platform after publishing"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "platform",
+    "scheduled_date"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
