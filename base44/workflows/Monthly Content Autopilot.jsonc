@@ -1,0 +1,87 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 5 1 * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "On the first of every month: re-runs the skip trace on every business, re-ranks the topics its market is searching for, builds the next 30 days of content from those topics, then mirrors the new posts into Google Calendar and Tasks. Saved paused, so nothing runs or spends anything until you switch it on.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "monthly_content_autopilot",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "research_business": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "researchBusiness",
+            "args": {}
+          },
+          "then": "research_topics",
+          "x-base44": {
+            "title": "Skip trace every business",
+            "description": "Refreshes the company, industry and services dossier"
+          }
+        }
+      },
+      {
+        "research_topics": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "researchTrends",
+            "args": {}
+          },
+          "then": "plan_content",
+          "x-base44": {
+            "title": "Rank this month's topics",
+            "description": "Rebuilds the ranked list of what the market searches for"
+          }
+        }
+      },
+      {
+        "plan_content": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "generateAutoSocialPlan",
+            "args": {}
+          },
+          "then": "sync_google",
+          "x-base44": {
+            "title": "Plan 30 days of content",
+            "description": "Builds the next month from the freshly ranked topics"
+          }
+        }
+      },
+      {
+        "sync_google": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncGoogleWorkspace",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Mirror to Calendar and Tasks",
+            "description": "Puts the new posts and their review tasks in the workspace"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Monthly Content Autopilot"
+}

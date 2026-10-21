@@ -59,6 +59,10 @@
       "type": "string",
       "description": "Content pillar / theme this post belongs to"
     },
+    "trend_topic": {
+      "type": "string",
+      "description": "Researched topic this post was built on, taken from the ranked topic list"
+    },
     "title": {
       "type": "string"
     },

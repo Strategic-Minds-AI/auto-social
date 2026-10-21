@@ -1,0 +1,137 @@
+{
+  "name": "BusinessDiscovery",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this dossier describes"
+    },
+    "company_profile": {
+      "type": "string",
+      "description": "What the company actually is and sells"
+    },
+    "website_summary": {
+      "type": "string",
+      "description": "What the business's own website says, when it could be read"
+    },
+    "industry_overview": {
+      "type": "string",
+      "description": "How the industry works and what buyers compare"
+    },
+    "services": {
+      "type": "array",
+      "description": "Services or product lines found, with the words customers search with",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "competitors": {
+      "type": "array",
+      "description": "Competing options and how this business differs",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "audience_insights": {
+      "type": "string",
+      "description": "Who buys and what drives their decision"
+    },
+    "positioning": {
+      "type": "string",
+      "description": "The sharpest honest angle this business can own"
+    },
+    "questions_people_ask": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Questions real customers ask before buying"
+    },
+    "talking_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Specific things this business should be talking about"
+    },
+    "website_researched": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the live website was actually retrieved"
+    },
+    "website_note": {
+      "type": "string",
+      "description": "Plain-language note on what the website fetch did"
+    },
+    "engine": {
+      "type": "string",
+      "description": "Which AI engine produced this dossier"
+    },
+    "generated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

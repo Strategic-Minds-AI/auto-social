@@ -108,7 +108,7 @@ export default function Dashboard() {
             Add a business and the dashboard will fill in with its campaigns and schedule.
           </p>
           <Button asChild>
-            <Link to="/businesses/new">Add a business</Link>
+            <Link to="/onboarding">Start guided onboarding</Link>
           </Button>
         </div>
       </div>

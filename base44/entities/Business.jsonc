@@ -18,6 +18,35 @@
       "type": "string",
       "description": "Industry/niche"
     },
+    "services": {
+      "type": "string",
+      "description": "Services or products offered, as the owner described them"
+    },
+    "service_area": {
+      "type": "string",
+      "description": "Where the business serves customers"
+    },
+    "differentiators": {
+      "type": "string",
+      "description": "What makes this business different from its competitors"
+    },
+    "primary_goal": {
+      "type": "string",
+      "description": "What the owner most wants the content to achieve"
+    },
+    "primary_platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "instagram",
+          "facebook",
+          "linkedin",
+          "x"
+        ]
+      },
+      "description": "Platforms chosen during onboarding, used as the default for new content plans"
+    },
     "target_audience": {
       "type": "string",
       "description": "Target audience description"
@@ -71,6 +100,10 @@
     "analysis": {
       "type": "string",
       "description": "AI-generated business analysis"
+    },
+    "onboarded_at": {
+      "type": "string",
+      "description": "When the guided onboarding last completed for this business"
     },
     "notification_phone": {
       "type": "string",

@@ -21,6 +21,8 @@ import Dashboard from '@/pages/Dashboard';
 import Assistant from '@/pages/Assistant';
 import TextAlerts from '@/pages/TextAlerts';
 import Leads from '@/pages/Leads';
+import Onboarding from '@/pages/Onboarding';
+import Intelligence from '@/pages/Intelligence';
 import VideoStudio from '@/pages/VideoStudio';
 
 const AuthenticatedApp = () => {
@@ -46,9 +48,11 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<AppShell />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/leads" element={<Leads />} />
+        <Route path="/intelligence" element={<Intelligence />} />
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/businesses" element={<Businesses />} />
         <Route path="/businesses/new" element={<BusinessForm />} />

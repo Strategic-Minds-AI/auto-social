@@ -1,0 +1,101 @@
+{
+  "name": "TrendTopic",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this topic was researched for"
+    },
+    "topic": {
+      "type": "string",
+      "description": "The subject, phrased the way a customer would talk about it"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "service",
+        "industry",
+        "question",
+        "seasonal",
+        "local"
+      ],
+      "default": "industry",
+      "description": "What kind of demand this topic represents"
+    },
+    "interest": {
+      "type": "number",
+      "description": "Judged demand for this topic, 0 to 100"
+    },
+    "momentum": {
+      "type": "string",
+      "enum": [
+        "rising",
+        "steady",
+        "declining"
+      ],
+      "default": "steady"
+    },
+    "keywords": {
+      "type": "string",
+      "description": "The search phrases behind this topic"
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the topic came from, e.g. google_trends or industry research"
+    },
+    "rank": {
+      "type": "number",
+      "description": "Position in the ranked list, 1 is most wanted"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set once a content plan has been built on this topic"
+    }
+  },
+  "required": [
+    "business_id",
+    "topic"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

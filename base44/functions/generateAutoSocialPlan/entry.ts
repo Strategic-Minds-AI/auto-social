@@ -14,7 +14,19 @@ function addDays(dateStr, days) {
   return toDateString(d);
 }
 
-function buildPrompt(business, days, totalPosts, platforms) {
+function buildPrompt(business, days, totalPosts, platforms, discovery, topics) {
+  const research = discovery
+    ? `MARKET RESEARCH (already completed for this business)
+Positioning: ${discovery.positioning || 'not specified'}
+What customers ask about: ${(discovery.questions_people_ask || []).join(' | ') || 'not specified'}
+Things worth talking about: ${(discovery.talking_points || []).join(' | ') || 'not specified'}`
+    : 'MARKET RESEARCH: not run yet. Work from the business details alone.';
+
+  const topicList = topics.length
+    ? `TOPICS THIS AUDIENCE SEARCHES FOR (ranked, most wanted first)
+${topics.map((topic, index) => `${index + 1}. ${topic.topic} [${topic.category || 'industry'}, ${topic.momentum || 'steady'}]`).join('\n')}`
+    : 'TOPICS: none researched yet.';
+
   return `You are the planning engine of Auto Social, an autonomous social media system.
 Plan the next ${days} days of content for this business.
 
@@ -22,9 +34,17 @@ BUSINESS
 Name: ${business.name}
 Industry: ${business.industry || 'not specified'}
 Description: ${business.description || 'not specified'}
+Services: ${business.services || 'not specified'}
+Service area: ${business.service_area || 'not specified'}
+What makes them different: ${business.differentiators || 'not specified'}
+Main goal: ${business.primary_goal || 'not specified'}
 Target audience: ${business.target_audience || 'not specified'}
 Brand tone: ${business.tone || 'professional'}
 Website: ${business.website || 'not specified'}
+
+${research}
+
+${topicList}
 
 REQUIREMENTS
 - Produce exactly ${totalPosts} posts spread across the ${days} day window using day_offset 0 to ${days - 1}. At most 3 posts may share the same day_offset.
@@ -36,6 +56,7 @@ REQUIREMENTS
 - Give every post a scroll-stopping hook, 8 to 12 relevant hashtags, and a detailed image_prompt describing a photorealistic on-brand image (subject, setting, lighting, mood, no text in the image).
 - For roughly one third of the posts also write a variant_b_caption: the same idea with a genuinely different hook and angle, so the two versions can be A/B tested.
 - scheduled_time must be a realistic local posting time between 07:00 and 20:00.
+- At least two thirds of the posts must be built on one of the ranked topics above, and every post must repeat the exact topic text it came from in its "topic" field. Leave "topic" empty only for a post that is not topic-led.
 - Also write a short strategy paragraph explaining the mix you chose.
 
 Return JSON only.`;
@@ -61,6 +82,7 @@ const PLAN_SCHEMA = {
           hashtags: { type: 'string' },
           call_to_action: { type: 'string' },
           image_prompt: { type: 'string' },
+          topic: { type: 'string' },
           video_script: { type: 'string' },
           variant_b_caption: { type: 'string' }
         },
@@ -119,11 +141,27 @@ export default async function (req) {
           skipped.push(business.name);
           continue;
         }
-        startDate = last ? addDays(last, 1) : addDays(today, 1);
+        // Never plan into the past: a monthly run starts after the previous
+        // month's last post rather than backfilling dates that have gone by.
+        startDate = last && last >= today ? addDays(last, 1) : addDays(today, 1);
       }
 
+      // The plan is built from whatever research is already on file: the
+      // discovery dossier and the ranked topic list.
+      const discovery = await base44.entities.BusinessDiscovery
+        .filter({ business_id: business.id }, { limit: 1 })
+        .then((page) => (page.items || [])[0] || null)
+        .catch(() => null);
+      const trendTopics = await base44.entities.TrendTopic
+        .filter({ business_id: business.id }, { sort: 'rank', limit: 25 })
+        .then((page) => page.items || [])
+        .catch(() => []);
+
+      const chosen = Array.isArray(business.primary_platforms) ? business.primary_platforms : [];
+      const businessPlatforms = requested.length ? requested : (chosen.length ? chosen : platforms);
+
       const plan = await generateJson(base44, {
-        prompt: buildPrompt(business, days, totalPosts, platforms),
+        prompt: buildPrompt(business, days, totalPosts, businessPlatforms, discovery, trendTopics),
         schema: PLAN_SCHEMA
       });
 
@@ -135,7 +173,7 @@ export default async function (req) {
         .map((p) => {
           const offset = Math.min(Math.max(Number(p.day_offset) || 0, 0), days - 1);
           const format = ALLOWED_FORMATS.includes(p.format) ? p.format : 'post';
-          const platform = ALLOWED_PLATFORMS.includes(p.platform) ? p.platform : platforms[0];
+          const platform = ALLOWED_PLATFORMS.includes(p.platform) ? p.platform : businessPlatforms[0];
           return {
             business_id: business.id,
             platform,
@@ -143,6 +181,7 @@ export default async function (req) {
             scheduled_date: addDays(startDate, offset),
             scheduled_time: p.scheduled_time || '09:00',
             pillar: p.pillar || '',
+            trend_topic: p.topic || '',
             title: p.title || '',
             hook: p.hook || '',
             caption: p.caption,
@@ -160,6 +199,14 @@ export default async function (req) {
       if (records.length) {
         await base44.entities.ScheduledPost.bulkCreate(records);
         created += records.length;
+
+        // Record which researched topics this plan actually used, so the topic
+        // list stays a live picture of what is still uncovered.
+        const used = new Set(records.map((r) => String(r.trend_topic || '').toLowerCase()).filter(Boolean));
+        const patches = trendTopics
+          .filter((topic) => used.has(String(topic.topic || '').toLowerCase()) && !topic.used)
+          .map((topic) => ({ id: topic.id, used: true }));
+        if (patches.length) await base44.entities.TrendTopic.bulkUpdate(patches);
       }
     }
 

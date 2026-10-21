@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { generateJsonWithMeta } from '../../shared/aiClient.ts';
 import { resolveBusiness, resolveCampaign, checkAiBudget, recordAiUsage } from '../../shared/access.ts';
+import { researchWebsite } from '../../shared/website.ts';
 
 // Every text-generation task that used to run on Base44's own AI credits now runs
 // on the app's own AI gateway. Image and video generation are untouched.
@@ -74,69 +75,6 @@ const PROMPT_SCHEMA = {
   properties: { prompt: { type: 'string' } },
   required: ['prompt'],
 };
-
-// Website research is real retrieval: the page is fetched server-side and its
-// text is handed to the model as supplied context. The model itself has no
-// internet access, so nothing here pretends otherwise.
-const MAX_SITE_BYTES = 400000;
-const SITE_TIMEOUT_MS = 12000;
-
-function isFetchableUrl(raw) {
-  try {
-    const url = new URL(String(raw).trim());
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-    const host = url.hostname.toLowerCase();
-    if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) return null;
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-      const [a, b] = host.split('.').map(Number);
-      if (a === 10 || a === 127 || a === 0 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31)) return null;
-    }
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-function htmlToText(html) {
-  return String(html)
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#39;|&rsquo;/gi, "'")
-    .replace(/&quot;/gi, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function extractTitle(html) {
-  const match = String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  return match ? htmlToText(match[1]).slice(0, 200) : '';
-}
-
-async function researchWebsite(rawUrl) {
-  const url = isFetchableUrl(rawUrl);
-  if (!url) return { ok: false, reason: 'That website address could not be reached.' };
-
-  try {
-    const response = await fetch(url.toString(), {
-      headers: { 'User-Agent': 'AutoSocialBot/1.0 (+marketing research)' },
-      signal: AbortSignal.timeout(SITE_TIMEOUT_MS),
-      redirect: 'follow',
-    });
-    if (!response.ok) return { ok: false, reason: `The website returned HTTP ${response.status}.` };
-
-    const html = (await response.text()).slice(0, MAX_SITE_BYTES);
-    const text = htmlToText(html).slice(0, 6000);
-    if (text.length < 60) return { ok: false, reason: 'The website had no readable text to analyse.' };
-
-    return { ok: true, url: url.toString(), title: extractTitle(html), text };
-  } catch (error) {
-    return { ok: false, reason: `The website could not be read (${error.message}).` };
-  }
-}
 
 function businessBlock(b) {
   return `BUSINESS
