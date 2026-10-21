@@ -1,0 +1,20 @@
+name: Auto Social Action Policy
+on:
+  pull_request:
+    paths:
+      - 'src/lib/socialActionPolicy.mjs'
+      - 'tests/socialActionPolicy.test.mjs'
+      - '.github/workflows/auto-social-policy.yml'
+  workflow_dispatch:
+jobs:
+  policy-fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/socialActionPolicy.test.mjs
