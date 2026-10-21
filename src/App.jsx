@@ -21,6 +21,7 @@ import Dashboard from '@/pages/Dashboard';
 import Assistant from '@/pages/Assistant';
 import TextAlerts from '@/pages/TextAlerts';
 import Leads from '@/pages/Leads';
+import VideoStudio from '@/pages/VideoStudio';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
         <Route path="/approval-queue" element={<ApprovalQueue />} />
         <Route path="/social-accounts" element={<SocialAccounts />} />
         <Route path="/text-alerts" element={<TextAlerts />} />
+        <Route path="/video-studio" element={<VideoStudio />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

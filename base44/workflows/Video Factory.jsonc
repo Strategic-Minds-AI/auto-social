@@ -1,0 +1,59 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/20 * * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Every 20 minutes, turns the next 7 days of the content plan into videos, collects the finished clips, runs the tests and benchmark scoring, and stores whatever passed for review.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "video_factory",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "plan_videos": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "planVideoBatch",
+            "args": {}
+          },
+          "then": "process_videos",
+          "x-base44": {
+            "title": "Brief the week ahead",
+            "description": "One video brief per planned post"
+          }
+        }
+      },
+      {
+        "process_videos": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processVideoBatch",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Collect, test and score",
+            "description": "Benchmark the finished clips and store them"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Video Factory"
+}

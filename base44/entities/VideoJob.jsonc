@@ -1,0 +1,219 @@
+{
+  "name": "VideoJob",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this video is made for"
+    },
+    "post_id": {
+      "type": "string",
+      "description": "ScheduledPost this video was generated from"
+    },
+    "post_title": {
+      "type": "string",
+      "description": "Title or hook of the source post, so the library reads without a join"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Day the source post goes out, so the library reads in posting order"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "format": {
+      "type": "string"
+    },
+    "aspect_ratio": {
+      "type": "string",
+      "description": "Framing requested from the video engine"
+    },
+    "seconds": {
+      "type": "number",
+      "description": "Requested length in seconds"
+    },
+    "model": {
+      "type": "string",
+      "description": "Video model used for this job"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The brief injected from the content plan"
+    },
+    "source_image_url": {
+      "type": "string",
+      "description": "Post image used as the opening frame, when the post had one"
+    },
+    "source_hash": {
+      "type": "string",
+      "description": "Hash of the plan fields this video was made from, so a later edit to the plan is visible"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "generating",
+        "scoring",
+        "passed",
+        "flagged",
+        "approved",
+        "rejected",
+        "failed",
+        "cancelled"
+      ],
+      "default": "queued"
+    },
+    "gateway_video_id": {
+      "type": "string",
+      "description": "Job id returned by the video engine"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "Stored video, ready for review"
+    },
+    "estimated_credits": {
+      "type": "number",
+      "description": "Credit estimate reported before generation"
+    },
+    "attempts": {
+      "type": "number",
+      "default": 0
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "tests": {
+      "type": "array",
+      "description": "Mechanical checks run against the delivered video",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "fail",
+              "skipped"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scores": {
+      "type": "array",
+      "description": "Benchmark rubric scores for this video",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "score_total": {
+      "type": "number"
+    },
+    "benchmark_target": {
+      "type": "number"
+    },
+    "benchmark_version": {
+      "type": "string"
+    },
+    "benchmark_passed": {
+      "type": "boolean",
+      "default": false
+    },
+    "safety_ok": {
+      "type": "boolean",
+      "default": false
+    },
+    "qa_summary": {
+      "type": "string",
+      "description": "The validator's verdict in plain language"
+    },
+    "qa_provider": {
+      "type": "string",
+      "description": "Which AI engine scored this video"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string"
+    },
+    "review_note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "post_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

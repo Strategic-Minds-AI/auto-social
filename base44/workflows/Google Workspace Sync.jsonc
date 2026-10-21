@@ -1,6 +1,4 @@
 {
-  "name": "Google Workspace Sync",
-  "description": "Every 15 minutes, mirrors approved and scheduled posts into Google Calendar and opens a Google Task for each post still waiting for review.",
   "trigger": {
     "condition": null,
     "config": {
@@ -18,6 +16,7 @@
       "ends_after_count": null
     }
   },
+  "description": "Every 15 minutes, mirrors approved and scheduled posts into Google Calendar and opens a Google Task for each post still waiting for review.",
   "definition": {
     "document": {
       "dsl": "1.0.0",
@@ -30,7 +29,8 @@
         "sync_google": {
           "call": "invoke_backend_function",
           "with": {
-            "function_name": "syncGoogleWorkspace"
+            "function_name": "syncGoogleWorkspace",
+            "args": {}
           },
           "then": "end",
           "x-base44": {
@@ -40,5 +40,6 @@
         }
       }
     ]
-  }
+  },
+  "name": "Google Workspace Sync"
 }
