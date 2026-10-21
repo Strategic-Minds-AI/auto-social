@@ -7,7 +7,7 @@
       "schedule_mode": "recurring",
       "cron_expression": "0 6 * * 1",
       "one_time_date": null,
-      "timezone": "UTC",
+      "timezone": "America/New_York",
       "interval_value": null,
       "interval_unit": null,
       "interval_anchor": null,
@@ -16,26 +16,44 @@
       "ends_after_count": null
     }
   },
-  "description": "Every Monday morning, tops up the Auto Social content calendar so each business always has 30 days of posts planned ahead. Skips any business that already has more than 14 days of runway.",
+  "description": "Every Monday morning, builds the coming Monday-to-Sunday week of content for each business and mirrors that week into Google Calendar. A week that already has posts is left untouched, so content is never planned twice.",
   "definition": {
     "document": {
       "dsl": "1.0.0",
       "name": "auto_social_weekly_plan",
-      "version": "1.0",
+      "version": "2.0",
       "namespace": "base44"
     },
     "do": [
       {
-        "top_up_content_plans": {
+        "plan_the_week": {
           "call": "invoke_backend_function",
           "with": {
             "function_name": "generateAutoSocialPlan",
+            "args": {
+              "days": 7,
+              "posts_per_week": 5,
+              "align_week": true
+            }
+          },
+          "then": "mirror_week_to_calendar",
+          "x-base44": {
+            "title": "Plan the coming week",
+            "description": "One whole Monday-to-Sunday week per business"
+          }
+        }
+      },
+      {
+        "mirror_week_to_calendar": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncGoogleWorkspace",
             "args": {}
           },
           "then": "end",
           "x-base44": {
-            "title": "Top up content plans",
-            "description": "Plans the next 30 days for each business"
+            "title": "Put the week in Google Calendar",
+            "description": "Adds or updates each post's calendar entry"
           }
         }
       }

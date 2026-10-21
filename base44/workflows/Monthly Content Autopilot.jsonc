@@ -16,12 +16,12 @@
       "ends_after_count": null
     }
   },
-  "description": "On the first of every month: re-runs the skip trace on every business, re-ranks the topics its market is searching for, builds the next 30 days of content from those topics, then mirrors the new posts into Google Calendar and Tasks. Saved paused, so nothing runs or spends anything until you switch it on.",
+  "description": "On the first of every month: re-runs the skip trace on every business and re-ranks the topics its market is searching for, so the weekly planner always has fresh material to build from. Planning itself happens a week at a time in the Auto Social Weekly Plan workflow. Saved paused, so nothing runs or spends anything until you switch it on.",
   "definition": {
     "document": {
       "dsl": "1.0.0",
       "name": "monthly_content_autopilot",
-      "version": "1.0",
+      "version": "2.0",
       "namespace": "base44"
     },
     "do": [
@@ -46,38 +46,10 @@
             "function_name": "researchTrends",
             "args": {}
           },
-          "then": "plan_content",
+          "then": "end",
           "x-base44": {
             "title": "Rank this month's topics",
             "description": "Rebuilds the ranked list of what the market searches for"
-          }
-        }
-      },
-      {
-        "plan_content": {
-          "call": "invoke_backend_function",
-          "with": {
-            "function_name": "generateAutoSocialPlan",
-            "args": {}
-          },
-          "then": "sync_google",
-          "x-base44": {
-            "title": "Plan 30 days of content",
-            "description": "Builds the next month from the freshly ranked topics"
-          }
-        }
-      },
-      {
-        "sync_google": {
-          "call": "invoke_backend_function",
-          "with": {
-            "function_name": "syncGoogleWorkspace",
-            "args": {}
-          },
-          "then": "end",
-          "x-base44": {
-            "title": "Mirror to Calendar and Tasks",
-            "description": "Puts the new posts and their review tasks in the workspace"
           }
         }
       }

@@ -14,6 +14,13 @@ function addDays(dateStr, days) {
   return toDateString(d);
 }
 
+// A weekly run always plans a whole Monday-to-Sunday week rather than a rolling
+// window that starts today, so the owner sees one complete week in the calendar.
+function weekStartFor(dateStr) {
+  const day = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
+  return addDays(dateStr, (8 - day) % 7);
+}
+
 function buildPrompt(business, days, totalPosts, platforms, discovery, topics) {
   const research = discovery
     ? `MARKET RESEARCH (already completed for this business)
@@ -108,6 +115,8 @@ export default async function (req) {
     const requested = (Array.isArray(body.platforms) ? body.platforms : []).filter((p) => ALLOWED_PLATFORMS.includes(p));
     const platforms = requested.length ? requested : ALLOWED_PLATFORMS;
     const totalPosts = Math.min(Math.max(Math.round((days / 7) * postsPerWeek), 4), 60);
+    // Weekly mode: build one week in advance instead of a rolling window.
+    const alignWeek = body.align_week === true && days === 7;
 
     const today = toDateString(new Date());
 
@@ -131,7 +140,23 @@ export default async function (req) {
     for (const business of businesses) {
       let startDate = body.start_date || addDays(today, 1);
 
-      if (isAutoRun) {
+      if (alignWeek) {
+        // The coming Monday-to-Sunday week. A week that already has posts is
+        // left alone, so running the weekly job twice never doubles the content.
+        const weekStart = weekStartFor(today);
+        const existing = await base44.entities.ScheduledPost.filter(
+          {
+            business_id: business.id,
+            scheduled_date: { $gte: weekStart, $lte: addDays(weekStart, 6) }
+          },
+          { limit: 1 }
+        );
+        if ((existing.items || []).length) {
+          skipped.push(business.name);
+          continue;
+        }
+        startDate = weekStart;
+      } else if (isAutoRun) {
         const page = await base44.entities.ScheduledPost.filter(
           { business_id: business.id, status: { $in: ['planned', 'scheduled'] } },
           { sort: '-scheduled_date', limit: 1 }

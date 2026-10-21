@@ -1,16 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 
 // Keeps the owner's Google workspace in step with the content calendar: every
-// approved or scheduled post becomes a Calendar entry, and every post still
-// waiting for review becomes one open Google Task. Both are keyed off stored ids
-// plus a hash of the mirrored fields, so an unchanged post costs no API calls.
+// planned, approved or scheduled post becomes a Calendar entry, and every post
+// still waiting for review also becomes one open Google Task. Both are keyed off
+// stored ids plus a hash of the mirrored fields, so an unchanged post costs no
+// API calls.
 
 const CAL = 'https://www.googleapis.com/calendar/v3';
 const TASKS = 'https://tasks.googleapis.com/tasks/v1';
 const TASK_LIST_TITLE = 'Strategic Minds AI - Content Approvals';
 const OPEN_STATUSES = ['planned', 'approved', 'scheduled', 'cancelled', 'failed'];
-const CALENDAR_STATUSES = ['approved', 'scheduled'];
+// A planned post is mirrored into the calendar too, so the coming week is
+// visible in Google Calendar while it still waits for approval.
+const CALENDAR_STATUSES = ['planned', 'approved', 'scheduled'];
 const DROPPED_STATUSES = ['cancelled', 'failed'];
+const STATUS_LABELS = {
+  planned: 'Status: planned, waiting for your review',
+  approved: 'Status: approved',
+  scheduled: 'Status: approved and queued to publish',
+};
 const POST_LIMIT = 100;
 const TIMEOUT_MS = 20000;
 const HALF_HOUR = 1800000;
@@ -95,6 +103,7 @@ function eventBody(post, businessName) {
   if (!window) return null;
 
   const description = [
+    STATUS_LABELS[post.status] || null,
     post.hook ? `Hook: ${post.hook}` : null,
     post.caption || null,
     post.call_to_action ? `Call to action: ${post.call_to_action}` : null,
@@ -104,7 +113,9 @@ function eventBody(post, businessName) {
     .filter(Boolean)
     .join('\n\n');
 
-  return { summary: postLabel(post, businessName), description, ...window };
+  // The week is scanned in Google Calendar, so an unreviewed post is tagged.
+  const reviewTag = post.status === 'planned' ? '[Review] ' : '';
+  return { summary: `${reviewTag}${postLabel(post, businessName)}`, description, ...window };
 }
 
 async function ensureTaskList(token, cache) {
