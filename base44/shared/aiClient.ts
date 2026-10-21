@@ -53,16 +53,15 @@ export function aiProviderHost() {
   return baseUrl ? baseUrl.replace(/^https?:\/\//, "").split("/")[0] : "Base44 AI";
 }
 
-export async function generateJson(base44, { prompt, schema }) {
+export async function generateJson(_base44, { prompt, schema }) {
   const baseUrl = getSecret("AI_BASE_URL");
+  const apiKey = getSecret("AI_API_KEY");
+  const model = getSecret("AI_MODEL");
 
-  if (baseUrl) {
-    try {
-      return await callProvider(baseUrl, getSecret("AI_API_KEY"), getSecret("AI_MODEL"), prompt, schema);
-    } catch (error) {
-      console.error(`Your AI provider failed (${error.message}); using Base44's AI for this run.`);
-    }
+  if (!baseUrl || !apiKey || !model) {
+    throw new Error("External AI is not fully configured. Set AI_BASE_URL, AI_API_KEY and AI_MODEL in Base44 secrets. No paid fallback was used.");
   }
 
-  return base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema });
+  // Fail closed: never silently consume Base44 AI integration credits.
+  return callProvider(baseUrl, apiKey, model, prompt, schema);
 }
