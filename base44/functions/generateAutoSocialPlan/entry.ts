@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
+import { generateJson, aiProviderHost } from '../../shared/aiClient.ts';
 
 const ALLOWED_PLATFORMS = ['instagram', 'facebook', 'linkedin', 'x'];
 const ALLOWED_FORMATS = ['post', 'story', 'reel', 'image'];
@@ -39,6 +40,36 @@ REQUIREMENTS
 
 Return JSON only.`;
 }
+
+const PLAN_SCHEMA = {
+  type: 'object',
+  properties: {
+    strategy: { type: 'string' },
+    posts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          day_offset: { type: 'number' },
+          platform: { type: 'string' },
+          format: { type: 'string' },
+          scheduled_time: { type: 'string' },
+          pillar: { type: 'string' },
+          title: { type: 'string' },
+          hook: { type: 'string' },
+          caption: { type: 'string' },
+          hashtags: { type: 'string' },
+          call_to_action: { type: 'string' },
+          image_prompt: { type: 'string' },
+          video_script: { type: 'string' },
+          variant_b_caption: { type: 'string' }
+        },
+        required: ['day_offset', 'platform', 'caption']
+      }
+    }
+  },
+  required: ['posts']
+};
 
 export default async function (req) {
   try {
@@ -91,37 +122,9 @@ export default async function (req) {
         startDate = last ? addDays(last, 1) : addDays(today, 1);
       }
 
-      const plan = await base44.integrations.Core.InvokeLLM({
+      const plan = await generateJson(base44, {
         prompt: buildPrompt(business, days, totalPosts, platforms),
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            strategy: { type: 'string' },
-            posts: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  day_offset: { type: 'number' },
-                  platform: { type: 'string' },
-                  format: { type: 'string' },
-                  scheduled_time: { type: 'string' },
-                  pillar: { type: 'string' },
-                  title: { type: 'string' },
-                  hook: { type: 'string' },
-                  caption: { type: 'string' },
-                  hashtags: { type: 'string' },
-                  call_to_action: { type: 'string' },
-                  image_prompt: { type: 'string' },
-                  video_script: { type: 'string' },
-                  variant_b_caption: { type: 'string' }
-                },
-                required: ['day_offset', 'platform', 'caption']
-              }
-            }
-          },
-          required: ['posts']
-        }
+        schema: PLAN_SCHEMA
       });
 
       const planned = Array.isArray(plan?.posts) ? plan.posts : [];
@@ -164,7 +167,8 @@ export default async function (req) {
       created,
       businesses: businesses.map((b) => b.name),
       skipped,
-      strategy: strategy.join('\n\n')
+      strategy: strategy.join('\n\n'),
+      provider: aiProviderHost()
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
