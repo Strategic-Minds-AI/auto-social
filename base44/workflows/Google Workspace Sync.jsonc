@@ -1,0 +1,44 @@
+{
+  "name": "Google Workspace Sync",
+  "description": "Every 15 minutes, mirrors approved and scheduled posts into Google Calendar and opens a Google Task for each post still waiting for review.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/15 * * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "google_workspace_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_google": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncGoogleWorkspace"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Mirror schedule to Google",
+            "description": "Calendar and tasks"
+          }
+        }
+      }
+    ]
+  }
+}

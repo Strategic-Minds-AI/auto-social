@@ -186,6 +186,18 @@
     },
     "notes": {
       "type": "string"
+    },
+    "google_event_id": {
+      "type": "string",
+      "description": "Google Calendar event mirrored from this post"
+    },
+    "google_task_id": {
+      "type": "string",
+      "description": "Google Task opened for this post while it waits for review"
+    },
+    "google_sync_hash": {
+      "type": "string",
+      "description": "Hash of the mirrored fields, so an unchanged post is never re-sent to Google"
     }
   },
   "required": [

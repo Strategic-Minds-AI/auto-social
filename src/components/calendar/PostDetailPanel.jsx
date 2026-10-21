@@ -1,6 +1,6 @@
 import StatusBadge from '@/components/scheduling/StatusBadge';
 import PostActionBar from '@/components/scheduling/PostActionBar';
-import { AlertTriangle, ExternalLink, X } from 'lucide-react';
+import { AlertTriangle, CalendarDays, ExternalLink, X } from 'lucide-react';
 
 // Post detail with its action bar. Shared by the Calendar page and the dashboard
 // content-flow calendar so a post behaves identically wherever it is opened.
@@ -60,6 +60,12 @@ export default function PostDetailPanel({ post, accounts, onChanged, onDeleted, 
             ))}
           </div>
         </div>
+      )}
+
+      {post.google_event_id && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <CalendarDays className="w-3 h-3" /> Mirrored into your Google Calendar
+        </p>
       )}
 
       {post.published_url && (
