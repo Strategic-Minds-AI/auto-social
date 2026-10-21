@@ -21,11 +21,11 @@ Mission: `AS-AI-GATEWAY-20261020` · Executed 2026-10-20 (America/New_York); Rai
 | Repository authenticated write | PASS | Function/test/docs/CI commits and GitHub read-back |
 | Base44 fail-closed behavior | PASS source check | Checkpoint + GitHub read-back; live inference not executed |
 | Local gateway policy tests | PASS 11/11 | Node 22 deterministic mock upstream |
-| GitHub CI test | NOT VERIFIED | PR checks must complete |
+| GitHub CI test | PASS | GitHub Actions run 39541684758, job 119030625305 completed successfully on source SHA e10ea3d6 |
 | Railway Function deployed | PASS | Environment status SUCCESS, source read-back |
-| Railway public URL | CREATED, HTTP UNVERIFIED | Domain allocated; direct HTTP checks not reachable from available tools, Remote Desktop Commander request failed/timed out |
+| Railway public URL | PASS /health | Live Base44 sandbox curl returned HTTP 200 and JSON version 0.2.0, ready false |
 | Provider credentials in Railway | BLOCKED | Two required secret names not installed |
-| /ready HTTP 200 | BLOCKED | Cannot be true without Railway key configuration |
+| /ready HTTP 200 | BLOCKED (EXPECTED) | Live Base44 sandbox curl returned HTTP 503 ready false; keys not provisioned |
 | Provider inference HTTP 200 | NOT RUN | No upstream keys on Railway |
 | Base44 through gateway end-to-end | NOT RUN | Never change Base44 secrets to an unready gateway |
 | Four direct Base44 InvokeLLM sites | OPEN | May consume Base44 AI credits |
@@ -53,3 +53,10 @@ The first project create operation used an inaccessible external workspace and r
 7. Integrate X1 queue/Cloud Browser for permitted observation, add provider OAuth/publishing separately under approved scope. Guardian QA, security and production review before broad release.
 
 Rollback: Restore Base44 checkpoint only with awareness the older version silently uses Base44 integration credits. Direct Groq backend secrets are the safer bypass until gateway is ready.
+
+## Additional verification receipt (2026-10-21 04:01 UTC)
+
+- GitHub Actions [run 39541684758](https://github.com/Strategic-Minds-AI/auto-social/actions/runs/39541684758), job `gateway-tests`: **SUCCESS**. `Security and proxy contract` step: **SUCCESS**. This validates committed source with 12 test cases on a fresh GitHub runner.
+- Live Base44 sandbox -> HTTPS `/health`: HTTP **200**, response `{\"service\":\"auto-social-ai-gateway\",\"version\":\"0.2.0\",\"ready\":false}`.
+- Live Base44 sandbox -> HTTPS `/ready`: HTTP **503**, same payload with `ready:false`, expected because the two Railway secrets are still absent.
+- Gateway draft PR: https://github.com/Strategic-Minds-AI/auto-social/pull/1 . No merge or Base44 gateway cutover was performed.
