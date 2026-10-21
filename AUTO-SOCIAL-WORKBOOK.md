@@ -1,136 +1,200 @@
 # AUTO SOCIAL — Implementation Workbook
 
-Living handoff document. Last updated: 2026-10-21 (batch 1: AI gateway verified + AI Content Studio).
+Living handoff document. Single source of truth — do not create another.
+
+- Phase 1 baseline commit: `3a947ec87134d7b9a76d29f71fff41e07ae1a2ab`
+- Phase 2 starting commit: `3a947ec87134d7b9a76d29f71fff41e07ae1a2ab`
+- Phase 2 ending commit: `fd95883a0829c7cf0623481d49a6e50686500bc5`
+- Last updated: 2026-10-21 (Phase 2)
 
 ---
 
-## 1. Architecture and integration inventory
+## 1. Status at a glance
+
+| Area | State |
+|---|---|
+| Text AI on own gateway | **Complete** — zero direct Base44 text-AI calls remain |
+| Image / video AI | On existing Base44 integrations, unchanged (as instructed) |
+| Approval + scheduling engine | **Complete and tested** |
+| Facebook publishing pipeline | **Complete and validated end to end, never fired at a live Page** |
+| Tenant isolation | **Enforced + tested** |
+| Media library | Not started |
+| Analytics | Not started |
+| Remaining UI pages (Dashboard, Settings) | Not started |
+
+---
+
+## 2. Architecture and integration inventory
 
 | Layer | Component | Status |
 |---|---|---|
-| AI (text) | Railway AI Gateway (own infra) | **Connected and verified** |
-| AI (image/video) | Base44 `GenerateImage` / `GenerateVideo` | Connected, consumes Base44 integration credits |
-| Social publishing | Facebook Pages connector | **Authorized, not yet wired to a publish pipeline** |
-| Social publishing | Instagram Business / LinkedIn / X / TikTok | **Not authorized — publishing impossible** |
-| Scheduling | Base44 workflow `Auto Social Weekly Plan` | Active (Mondays 06:00 UTC) |
-| Data | Business, Campaign, ContentPiece, ScheduledPost, ContentDraft | Active, RLS enforced |
+| AI (text) | Railway AI Gateway | Live, all text generation routed here |
+| AI (image/video) | Base44 `GenerateImage` / `GenerateVideo` | Unchanged |
+| Social publishing | Facebook Pages connector | Authorized, **12+ Pages discoverable, publishing verified to the token level** |
+| Social publishing | Instagram / LinkedIn / X / TikTok | Not authorized — publishing refuses with a clear message |
+| Scheduling | `Auto Social Weekly Plan` (Mon 06:00) | Active, unchanged, not duplicated |
+| Scheduling | `Publish Due Posts` (every 5 min) | Active, new |
 
 ### Backend functions
-- `generateAutoSocialPlan` — plans a calendar of `ScheduledPost` rows via the Railway gateway. Admin-only.
-- `generateStudioContent` — **new.** Writes content drafts (create / rewrite / variation) via the Railway gateway and persists them as `ContentDraft` records.
 
-### Shared modules
-- `base44/shared/aiClient.ts` — the single AI entry point (`generateJson`, `generateJsonWithMeta`, `aiConfig`, `aiProviderHost`). All AI text generation must go through this file; never duplicate gateway logic into a function.
+| Function | Purpose |
+|---|---|
+| `generateAutoSocialPlan` | Weekly calendar planning. Unchanged. |
+| `generateStudioContent` | Content Studio drafts. Unchanged. |
+| `generateText` | **New.** All four migrated text tasks (`business_analysis`, `campaign_strategies`, `campaign_content`, `video_prompt`) on the gateway, with real website retrieval and per-user budget. |
+| `manageScheduledPost` | **New.** The approval/scheduling state machine and single-post publishing. |
+| `publishDuePosts` | **New.** The durable publishing job: claims due posts, publishes once, records receipts. |
+| `facebookAccounts` | **New.** Page discovery (incl. Business Manager merge), linking, verification. |
 
-### Frontend pages
-`/businesses`, `/businesses/new`, `/businesses/edit/:id`, `/campaigns`, `/campaigns/new`, `/campaigns/:id`, `/content`, `/studio` (**new**), `/auto-social`.
+### Shared modules (single source of truth, never duplicated into functions)
+
+| Module | Responsibility |
+|---|---|
+| `base44/shared/aiClient.ts` | Gateway calls: retries, timeout, token ceiling, JSON recovery, provider reporting. |
+| `base44/shared/access.ts` | Tenant resolution, per-user daily AI budget, receipt helper. |
+| `base44/shared/time.ts` | Local-time → UTC conversion with DST handling. |
+| `base44/shared/facebook.ts` | Graph API: page listing, token derivation, publishing, follower counts. |
+
+### Entities
+
+`Business`, `Campaign`, `ContentPiece`, `ContentDraft`, `ScheduledPost` (extended), **`SocialAccount`** (new), **`AiUsage`** (new).
+
+`ScheduledPost` gained: `timezone`, `scheduled_at`, `social_account_id`, `campaign_id`, `content_draft_id`, `approved_by/at`, `approval_note`, `cancelled_reason`, `idempotency_key`, `lock_token`, `locked_at`, `publish_attempts`, `max_attempts`, `last_attempt_at`, `published_at`, `published_url`, `publish_history`, and the statuses `approved`, `publishing`, `cancelled`.
+
+### Pages
+
+`/calendar`, `/approval-queue`, `/social-accounts` are new and in the sidebar. Existing pages unchanged except the AI migration.
 
 ---
-
-## 2. Source repository
-
-- Repository: `https://github.com/Strategic-Minds-AI/auto-social`
-- Branch: `main`
-- Commit at start of batch 1: `ce2d905`
-- Remotes configured: `origin`, `github`
 
 ## 3. Environment variables (names only — never values)
 
-| Name | Purpose | State |
+`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL` — all set and verified.
+No new secrets were required for this phase.
+
+---
+
+## 4. Priority 1 — Base44 text AI eliminated
+
+All four call sites now route through `generateText`:
+
+| File | Was | Now |
 |---|---|---|
-| `AI_BASE_URL` | Railway gateway OpenAI-compatible endpoint | Set |
-| `AI_API_KEY` | Must equal the Railway `GATEWAY_CLIENT_KEY` | Set |
-| `AI_MODEL` | `openai/gpt-oss-20b` | Set |
-| `AI_UPSTREAM_API_KEY` | Railway-side upstream provider key | Railway only |
-| `GATEWAY_CLIENT_KEY` | Railway-side client key | Railway only |
-| `BROWSER_ENGINE_URL` / `BROWSER_ENGINE_API_KEY` | Browser-automation engine | **Not set — user skipped** |
+| `src/pages/CampaignDetail.jsx` | `Core.InvokeLLM` | `generateText` → `campaign_content` |
+| `src/pages/CampaignWizard.jsx` | `Core.InvokeLLM` | `generateText` → `campaign_strategies` |
+| `src/components/content/ContentPieceCard.jsx` | `Core.InvokeLLM` | `generateText` → `video_prompt` |
+| `src/pages/BusinessForm.jsx` | `Core.InvokeLLM` with `add_context_from_internet` | `generateText` → `business_analysis` |
+
+Verified: `grep -rn "InvokeLLM" src/` returns **none**.
+
+**Website research is genuine, not implied.** The Business Form previously passed `add_context_from_internet: true`, which the gateway model cannot honour. The function now fetches the page server-side, strips it to text, and hands the real content to the model. The model is explicitly told to say when nothing was retrieved, and the UI shows "Read the live page at <url>" or the exact reason it could not. Private and internal hosts are refused.
+
+**Cost controls:** per-user daily budget of 250 calls and 500,000 tokens (`AiUsage` entity), enforced *before* any request, returning HTTP 429 with the reset time. Every response reports provider host, model, attempt count and token usage. Retries: 3 attempts with exponential backoff, 120s timeout, retry only on 408/425/429/5xx.
 
 ---
 
-## 4. Completed in batch 1
+## 5. Priorities 2 & 3 — Scheduling, approval and publishing
 
-1. **Verified the Railway gateway for real** (not assumed) — see test records below.
-2. **Hardened `base44/shared/aiClient.ts`**: explicit token ceiling, 3 attempts with exponential backoff, 120s timeout, retry only on transient statuses, sanitized error text, JSON fence stripping and brace-recovery, and `meta` reporting (provider host, model, attempts, token usage) on every call.
-3. **New entity `ContentDraft`** with owner-or-admin row-level security.
-4. **New function `generateStudioContent`** — three modes (create, rewrite, variation), server-side validation, RLS-scoped business lookup, persists drafts with the engine that produced them.
-5. **New AI Content Studio page** (`/studio`) with draft list, edit, delete, copy, and the connected engine shown on screen.
-6. **Tenant isolation repaired** — `Business`, `Campaign` and `ContentPiece` previously had **no access rules at all**; all three now use owner-or-admin on read/update/delete and creator-only on create.
-7. **Sidebar branding corrected** to "Auto Social" and a Content Studio nav entry added.
+**State machine:** `planned` → `approved` → `scheduled` → `publishing` → `published` / `failed`, plus `cancelled` and a step back to review. Illegal transitions are refused with HTTP 409.
 
-## 5. Incomplete / not yet started
+**Timezone:** a post stores a local date, local time and an IANA zone. The UTC due instant is derived, and DST is handled by a two-pass offset resolution.
 
-- Publishing engine (Facebook only path available today).
-- Instagram / LinkedIn / X / TikTok account connection flows.
-- Content calendar with day/week/month views and drag-and-drop.
-- Media library.
-- Analytics dashboard on real provider metrics.
-- Approval queues and status workflow beyond draft/approved/archived.
-- Client workspace isolation beyond RLS (no workspace/team membership model yet).
-- Remaining Base44-credit text generation in the frontend (see section 7).
+**Safety design — a post is never published by accident:**
+- Only `scheduled` posts are ever picked up. Planned and approved posts are untouched.
+- A run claims a post by writing a lock token then re-reading to confirm it holds the claim, so two overlapping runs cannot both send the same post.
+- A post that already carries a Facebook post id is skipped, never re-sent.
+- `idempotency_key` is re-minted whenever the slot changes.
+- Attempts are bounded (default 3) and spaced by a 5-minute backoff, so a broken connection fails visibly instead of retrying forever.
+- Locks abandoned by an interrupted run are released automatically after 10 minutes.
+- Every transition appends a dated receipt to `publish_history`.
+- "Publish now" in the UI requires an explicit confirmation naming the Page and the text.
+
+**Page access tokens are never stored or sent to the browser.** They are derived on demand inside the function, used, and discarded. The discovery endpoint exposes page identity only.
+
+**Facebook Business Manager Pages are included**, by querying both `client_pages` and `owned_pages` per business and merging by id, with the Business Manager label never overwritten by a null.
 
 ---
 
-## 6. Test records
-
-All results below are from real executions.
+## 6. Test results — all executed, none assumed
 
 | Test | Expected | Observed | Verdict |
 |---|---|---|---|
-| Gateway `/ready` | 200 | `200` | **PASS** |
-| Authenticated completion | 200 + real text | `200`, returned `GATEWAY OK` | **PASS** |
-| Unauthenticated completion | rejected | `401` | **PASS** |
-| Structured JSON output | valid JSON | `{"ok":true,"word":"banana"}` | **PASS** |
-| Studio `create`, 2 posts, Instagram | 200 + 2 drafts saved | `200`, 2 drafts, provider + model recorded | **PASS** |
-| Studio `variation`, 2 posts, LinkedIn | 200 + 2 saved | `200`, 2 variants saved | **PASS** |
-| Validation: no brief | 400 | `400 "Describe what you want the posts to be about."` | **PASS** |
-| Validation: business not visible to caller | 403 | `403 "That business is not available to you."` | **PASS** |
-| Production build | no errors | clean (`vite build`) | **PASS** |
-| Draft persistence + retrieval | saved record readable | `ContentDraft` rows returned with ids and timestamps | **PASS** |
-| Publishing to a live platform | — | no authorized account yet | **BLOCKED** |
-| Analytics from providers | — | no authorized account yet | **BLOCKED** |
+| `grep InvokeLLM src/` | no matches | none | **PASS** |
+| Business analysis via gateway + live site fetch | real analysis, research flag | 200, real analysis, `website_researched: true`, 2492 tokens | **PASS** |
+| Facebook `discover` | real Pages | 200, 12+ real Pages, all `has_token: true`, Business Manager merge populated | **PASS** |
+| Approve transition | `approved`, approver recorded | `approved`, `j.xpsxpress@gmail.com` | **PASS** |
+| Illegal transition (approve twice) | 409 | 409 "A approved post cannot be approved." | **PASS** |
+| Schedule → UTC, EDT | `2026-10-22T13:00:00.000Z` | exact match | **PASS** |
+| DST boundary, EST side | `2026-03-07T14:00:00.000Z` | exact match | **PASS** |
+| DST boundary, EDT side | `2026-03-09T13:00:00.000Z` | exact match | **PASS** |
+| Page association persists | `social_account_id` saved | saved; `idempotency_key` minted from the slot | **PASS** |
+| Dry-run publish, single post | validates, sends nothing | `dry: true`, account named, status released, no post id | **PASS** |
+| Dry-run via the scheduled job | full job path, sends nothing | `outcome: dry_run`, "Ready to publish to Epoxy Floors Now." | **PASS** |
+| Double-post prevention | skip already-published | "Already published." — no network call | **PASS** |
+| Retry backoff | due-but-just-attempted skipped | filtered out of candidates, then picked up once cleared | **PASS** |
+| Lock release | no stuck lock | `lock_token` empty after the run | **PASS** |
+| Premature firing | far-future post untouched | job processed 0 | **PASS** |
+| Forged business id | 403 | 403 "That post belongs to a business you cannot access." | **PASS** |
+| Unknown post id | 404 | 404 | **PASS** |
+| Forged account id (other business's Page) | 403 | 403 "That account belongs to a different business." | **PASS** |
+| Platform with no connection | refused clearly | 502 "Publishing to instagram is not connected." | **PASS** |
+| Production build | clean | `vite build` exit 0 | **PASS** |
+| **Real publish to a live Page** | — | **deliberately not performed** | **NOT RUN** |
 
-Latency: gateway round trip ≈ 2.8–3.1s for a 2-post generation on `openai/gpt-oss-20b`.
+### The one thing that was never done
 
-## 7. Known defects, fixes and risks
+**No content was ever published to a live Page.** Every publishing test ran through dry-run, which exercises page discovery, account lookup, token derivation and payload validation but stops before the network call that creates a post. `external_post_id` and `published_at` remained empty in every test. Real publishing requires the explicit approval that the brief asks for.
 
-**Fixed**
-1. **Empty AI responses.** `openai/gpt-oss-20b` is a reasoning model: it spends tokens on hidden reasoning before emitting content. With a low or absent token ceiling the response comes back with empty content and no error. Fixed with an explicit `max_tokens` ceiling (4000) plus a `finish_reason: "length"` specific error message.
-2. **No resilience on gateway calls.** A single transient 429/5xx or a hung socket failed the whole generation. Fixed with bounded retry, exponential backoff and a hard timeout.
-3. **Upstream error bodies surfaced to the UI.** Now sanitized before display.
-4. **Open tenant data.** `Business`, `Campaign`, `ContentPiece` had no RLS — any signed-in user could read, modify or delete every record in the app. Now owner-or-admin.
+---
 
-**Outstanding**
-5. **Frontend still spends Base44 AI credits.** `src/pages/CampaignDetail.jsx`, `src/pages/CampaignWizard.jsx` and `src/components/content/ContentPieceCard.jsx` call `base44.integrations.Core.InvokeLLM` directly. Text generation should move to the gateway; image/video generation must stay on Base44 integrations.
-6. **No idempotency keys** on generation or (future) publishing.
-7. **No AI spend ceiling** — no per-user rate limit or budget cap on gateway calls.
-8. **Publishing is unproven.** Nothing has been posted to a live platform.
+## 7. Security posture
 
-## 8. Agent and automation workflows
+- **RLS on every entity**: owner-or-admin on read/update/delete, creator-only on create. `Business`, `Campaign` and `ContentPiece` were fixed in Phase 1; `SocialAccount` and `AiUsage` were created with rules from the start.
+- **Second gate in code**: every function resolves the business/campaign/post through `base44/shared/access.ts`, so an authenticated caller cannot reach another tenant's records by forging an id — proven by the 403 tests above.
+- **The publishing job is admin-only** (`401` without a user, `403` without the admin role), as required for a function a schedule calls.
+- **Page tokens are never persisted or returned to the client.**
 
-- `Auto Social Weekly Plan` — weekly Monday 06:00 UTC, calls `generateAutoSocialPlan` to top up each business's calendar.
-- No agent infrastructure yet. Recommended shape: one shared job record plus reusable prompt stages (strategy → writing → brand check → hashtags → QA), **not** separate schedulers per stage.
+### Honest limitation
 
-## 9. Deployment and validation receipts
+Team permissions are enforced as **owner-or-admin**. A true per-business membership table is not enforceable here, because row-level rules can only inspect the record and the current user — they cannot follow a membership join, and adding a new value to the User `role` field is not supported. Until a platform-level membership primitive exists, **multi-client team access should stay invite-only, with one owner account per client**, and staff needing full access should be admins (who can see and change all data).
 
-- Batch 1 validation: gateway probe, 4 function invocations (2 positive, 2 negative), production build, entity read-back.
-- Temporary QA business and its 4 drafts were created for testing and **deleted afterwards** (0 test records remain).
+---
 
-## 10. External dependencies and blockers
+## 8. Cost impact
 
-| Blocker | Impact | Owner |
+- All four remaining text workflows moved off Base44 integration credits onto the app's own Railway gateway. Text generation no longer consumes Base44 AI credits anywhere in the app.
+- Image and video generation still consume Base44 integration credits by design.
+- A hard ceiling now exists where none did: 250 calls and 500,000 tokens per user per day.
+- Observed gateway cost per call: ~2,400 tokens for a business analysis, ~2,900 for two social posts, ~2.9–3.1s latency.
+
+---
+
+## 9. Known limitations and blockers
+
+| Item | Impact | Owner |
 |---|---|---|
-| Instagram Business not authorized | No Instagram publishing or metrics | User action |
-| LinkedIn not authorized | No LinkedIn publishing | User action |
-| X not authorized (shared-only connector) | No X publishing | User action |
-| TikTok connector read-only | Publishing impossible by design | Platform limitation |
-| No live social account on any platform | Publishing and analytics untestable | User action |
-| Browser engine secrets not set | No browser-automation features | User action |
+| No live publish has been performed | The final network call is unproven against Meta | User approval needed |
+| Instagram / LinkedIn / X not authorized | Those platforms cannot publish; the job reports it clearly | User action |
+| TikTok connector is read-only | Publishing impossible by design | Platform limitation |
+| Meta tokens are not long-lived-exchanged | Publishing can expire and require reconnect; surfaced as `needs_reauth` | Meta/connector behaviour |
+| Meta retired the impressions/fans insight family | Reach and impressions are not available from the API as commonly documented | Analytics phase must use `page_media_view`, `page_total_media_view_unique`, `page_follows`, `page_post_engagements` only |
+| Facebook comment/DM automation unavailable | `pages_read_user_content` and `pages_manage_engagement` are not approved | Platform limitation |
+| Media library not built | No reusable asset management yet | Next phase |
+| Analytics not built | No performance dashboard yet | Next phase |
+| No Dashboard or Settings page | Sidebar has 8 entries, not the full 10 requested | Next phase |
 
-## 11. Exact next actions
+---
 
-1. Connect one real Facebook Page and build the publish pipeline end to end (create → validate → approve → publish → confirm platform post id → record error on failure).
-2. Move the remaining frontend text generation off Base44 credits onto the gateway.
-3. Add per-user rate limiting and a spend cap on gateway calls.
-4. Build the calendar view over `ScheduledPost` with statuses and approval.
-5. Add analytics using real Facebook Page insights only, and label every metric that is unavailable.
-6. Authorize Instagram Business and LinkedIn, then extend publishing to them.
+## 10. Exact next actions
+
+1. **Approve one live test publish** to a chosen Page, then confirm the returned post id and URL appear on the calendar.
+2. Build the **Media Library** on the existing upload path.
+3. Build **Analytics** using only the metrics Meta still serves, marking unavailable metrics as unavailable.
+4. Add **Dashboard** and **Settings** pages to complete the requested navigation.
+5. Add retry/idempotency receipts for image and video generation, which still have no equivalent guard.
+
+---
+
+## 11. Reproduce the validation
+
+The test harness used inline scripts against the live app: create a temporary business, link a real Page to it, drive the state machine, run `publishDuePosts` with `{ dry_run: true }`, assert the post is unchanged, then assert cross-tenant and forged-account requests return 403. All temporary records were deleted afterwards — 0 posts, 0 accounts and 0 businesses remained.
