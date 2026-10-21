@@ -90,7 +90,7 @@ export default function PlanGeneratorModal({ business, busy, onGenerate, onClose
         <Button
           onClick={() => onGenerate({ platforms, days, posts_per_week: perWeek, start_date: startDate || undefined })}
           disabled={busy || !platforms.length}
-          className="w-full mt-6 bg-primary glow-purple-sm gap-2 font-medium"
+          className="w-full mt-6 bg-primary glow-primary-sm gap-2 font-medium"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {busy ? 'Writing your plan…' : `Generate ${days}-day plan`}

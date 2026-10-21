@@ -65,7 +65,7 @@ export default function Campaigns() {
           {activeBusiness && <p className="text-muted-foreground mt-1">For <span className="text-primary font-medium">{activeBusiness.name}</span></p>}
         </div>
         {activeBusiness && (
-          <Button onClick={() => navigate('/campaigns/new')} className="bg-primary hover:bg-primary/90 glow-purple-sm gap-2">
+          <Button onClick={() => navigate('/campaigns/new')} className="bg-primary hover:bg-primary/90 glow-primary-sm gap-2">
             <Plus className="w-4 h-4" /> New Campaign
           </Button>
         )}

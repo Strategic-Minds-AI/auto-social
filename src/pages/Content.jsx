@@ -56,7 +56,7 @@ export default function Content() {
         {PLATFORM_TABS.map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
             className={cn("px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap capitalize",
-              activeTab === t ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+              activeTab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
             )}>
             {t === 'all' ? 'All Platforms' : t === 'youtube' ? 'YouTube' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>

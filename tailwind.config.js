@@ -76,7 +76,7 @@ module.exports = {
         'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },
         'accordion-up': { from: { height: 'var(--radix-accordion-content-height)' }, to: { height: '0' } },
         'fade-in': { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
-        'pulse-glow': { '0%, 100%': { boxShadow: '0 0 10px hsl(258 90% 66% / 0.3)' }, '50%': { boxShadow: '0 0 25px hsl(258 90% 66% / 0.6)' } },
+        'pulse-glow': { '0%, 100%': { boxShadow: '0 0 10px hsl(200 100% 50% / 0.3)' }, '50%': { boxShadow: '0 0 25px hsl(200 100% 50% / 0.6)' } },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',

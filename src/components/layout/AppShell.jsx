@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Zap, Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot } from 'lucide-react';
+import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
+
+const BRAND_LOGO =
+  'https://media.base44.com/images/public/6ac4dd914af935b8c986b411/854a71ca3_836982562_28635455156118005_3935075842464884998_n.jpg';
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -14,7 +17,7 @@ const navItems = [
   { label: 'Social Accounts', path: '/social-accounts', icon: Share2 },
   { label: 'Auto Social', path: '/auto-social', icon: CalendarClock },
   { label: 'Content Library', path: '/content', icon: FileText },
-  { label: 'Assistant', path: '/assistant', icon: Bot },
+  { label: 'Eden Skye', path: '/assistant', icon: Bot },
 ];
 
 export default function AppShell() {
@@ -32,10 +35,10 @@ export default function AppShell() {
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center glow-purple-sm">
-              <Zap className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center glow-primary-sm">
+              <img src={BRAND_LOGO} alt="Strategic Minds AI" className="w-full h-full object-cover" />
             </div>
-            <span className="font-space font-bold text-lg text-gradient">Auto Social</span>
+            <span className="font-space font-bold text-base leading-tight text-gradient">Strategic Minds AI</span>
           </div>
         </div>
 
@@ -56,7 +59,7 @@ export default function AppShell() {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-primary/15 text-primary glow-purple-sm"
+                    ? "bg-primary/15 text-primary glow-primary-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 )}
               >
@@ -82,8 +85,8 @@ export default function AppShell() {
         {/* Mobile topbar */}
         <header className="lg:hidden sticky top-0 z-30 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
-            <span className="font-space font-bold text-gradient">Auto Social</span>
+            <img src={BRAND_LOGO} alt="Strategic Minds AI" className="w-6 h-6 rounded-md object-cover" />
+            <span className="font-space font-bold text-gradient">Strategic Minds AI</span>
           </div>
           <button onClick={() => setMobileOpen(!mobileOpen)} className="text-muted-foreground">
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

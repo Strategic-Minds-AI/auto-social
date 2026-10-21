@@ -115,7 +115,7 @@ export default function StudioForm({ business, busy, onGenerate, lastRun }) {
       )}
 
       <Button onClick={submit} disabled={busy || !ready}
-        className="w-full bg-primary glow-purple-sm gap-2 font-medium">
+        className="w-full bg-primary glow-primary-sm gap-2 font-medium">
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
         {busy ? 'Writing…' : mode === 'rewrite' ? 'Rewrite with AI' : `Generate ${needsText ? count : count} with AI`}
       </Button>

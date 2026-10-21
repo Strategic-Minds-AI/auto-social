@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
 import { Button } from '@/components/ui/button';
-import { Megaphone, CalendarClock, CheckCircle2, AlertCircle, Bot } from 'lucide-react';
+import { Megaphone, CalendarClock, CheckCircle2, AlertCircle } from 'lucide-react';
+import EdenAvatar from '@/components/assistant/EdenAvatar';
 import StatTiles from '@/components/dashboard/StatTiles';
 import CampaignBoard from '@/components/dashboard/CampaignBoard';
 import UpcomingSchedule from '@/components/dashboard/UpcomingSchedule';
@@ -116,8 +117,8 @@ export default function Dashboard() {
         </div>
         <Button asChild variant="outline" size="sm">
           <Link to="/assistant">
-            <Bot className="w-4 h-4 mr-2" />
-            Ask the assistant
+            <EdenAvatar className="w-5 h-5 mr-2" />
+            Ask Eden Skye
           </Link>
         </Button>
       </div>

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bot, Send, MessageSquarePlus } from 'lucide-react';
+import { Send, MessageSquarePlus } from 'lucide-react';
 import ChatBubble from '@/components/assistant/ChatBubble';
+import EdenAvatar from '@/components/assistant/EdenAvatar';
 import ConversationRail from '@/components/assistant/ConversationRail';
 
 const AGENT = 'social_assistant';
@@ -33,7 +34,7 @@ export default function Assistant() {
   const startConversation = async () => {
     const created = await base44.agents.createConversation({
       agent_name: AGENT,
-      metadata: { name: 'New conversation', description: 'Auto Social assistant' },
+      metadata: { name: 'New conversation', description: 'Eden Skye' },
     });
     setConversation(created);
     setMessages(created?.messages || []);
@@ -102,12 +103,10 @@ export default function Assistant() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="border-b border-border px-5 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center glow-purple-sm shrink-0">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
+            <EdenAvatar className="w-10 h-10" />
             <div className="min-w-0">
-              <p className="font-space font-semibold truncate">Social Assistant</p>
-              <p className="text-xs text-muted-foreground">Ask about your campaigns, schedule or content</p>
+              <p className="font-space font-semibold truncate">Eden Skye</p>
+              <p className="text-xs text-muted-foreground">Executive AI assistant</p>
             </div>
           </div>
           <Button size="sm" variant="outline" className="lg:hidden" onClick={startConversation}>
@@ -118,10 +117,10 @@ export default function Assistant() {
         <div className="flex-1 overflow-auto px-5 py-5 space-y-4">
           {!conversation ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <Bot className="w-8 h-8 text-primary mb-3" />
-              <h2 className="font-space font-semibold">Start a conversation</h2>
+              <EdenAvatar className="w-16 h-16 mb-4" />
+              <h2 className="font-space font-semibold">Talk to Eden Skye</h2>
               <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-sm">
-                Ask what is going out this week, what still needs your review, or have it draft something new.
+                Ask what is going out this week, what still needs your review, or have her draft something new.
               </p>
               <Button onClick={startConversation}>New chat</Button>
             </div>

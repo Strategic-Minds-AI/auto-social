@@ -131,7 +131,7 @@ export default function AutoSocial() {
             {business ? `Autonomous content engine for ${business.name}` : 'Autonomous content engine'}
           </p>
         </div>
-        <Button onClick={() => setShowGenerator(true)} disabled={!business || generating} className="bg-primary glow-purple-sm gap-2 font-medium">
+        <Button onClick={() => setShowGenerator(true)} disabled={!business || generating} className="bg-primary glow-primary-sm gap-2 font-medium">
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {generating ? 'Working…' : 'Generate plan'}
         </Button>

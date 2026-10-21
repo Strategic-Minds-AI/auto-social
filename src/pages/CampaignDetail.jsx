@@ -108,7 +108,7 @@ export default function CampaignDetail() {
           <Button
             onClick={() => setShowGenerate(true)}
             disabled={generating}
-            className="bg-primary glow-purple-sm gap-2"
+            className="bg-primary glow-primary-sm gap-2"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {generating ? 'Generating...' : 'Generate Content'}
@@ -130,7 +130,7 @@ export default function CampaignDetail() {
           {TABS.map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
               className={cn("px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap capitalize",
-                activeTab === t ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                activeTab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               )}>
               {t === 'all' ? 'All' : t.replace('_', ' ')}
             </button>

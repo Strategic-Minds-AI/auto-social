@@ -106,7 +106,7 @@ export default function CampaignWizard() {
         {['Name & Platforms', 'Choose Goal', 'Select Strategy'].map((label, i) => (
           <div key={i} className="flex items-center gap-2">
             <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all",
-              step > i ? "bg-primary text-white" : step === i ? "bg-primary/20 text-primary border border-primary" : "bg-secondary text-muted-foreground"
+              step > i ? "bg-primary text-primary-foreground" : step === i ? "bg-primary/20 text-primary border border-primary" : "bg-secondary text-muted-foreground"
             )}>
               {step > i ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
             </div>
@@ -154,7 +154,7 @@ export default function CampaignWizard() {
               {GOALS.map(g => (
                 <button key={g.id} onClick={() => setSelectedGoal(g.id)}
                   className={cn("text-left p-4 rounded-xl border transition-all",
-                    selectedGoal === g.id ? "border-primary bg-primary/10 glow-purple-sm" : "border-border bg-card hover:border-primary/40"
+                    selectedGoal === g.id ? "border-primary bg-primary/10 glow-primary-sm" : "border-border bg-card hover:border-primary/40"
                   )}>
                   <div className="text-2xl mb-2">{g.emoji}</div>
                   <div className="font-space font-semibold text-sm mb-1">{g.label}</div>
@@ -190,7 +190,7 @@ export default function CampaignWizard() {
                       transition={{ delay: i * 0.1 }}
                       onClick={() => setSelectedStrategy(s.name)}
                       className={cn("w-full text-left p-5 rounded-xl border transition-all",
-                        selectedStrategy === s.name ? "border-primary bg-primary/10 glow-purple-sm" : "border-border bg-card hover:border-primary/40"
+                        selectedStrategy === s.name ? "border-primary bg-primary/10 glow-primary-sm" : "border-border bg-card hover:border-primary/40"
                       )}
                     >
                       <div className="font-space font-semibold mb-1">{s.name}</div>
@@ -208,7 +208,7 @@ export default function CampaignWizard() {
                 </div>
                 <div className="flex justify-between mt-6">
                   <Button variant="outline" onClick={() => setStep(1)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
-                  <Button onClick={handleSave} disabled={!selectedStrategy || saving} className="bg-primary glow-purple-sm gap-2 min-w-36">
+                  <Button onClick={handleSave} disabled={!selectedStrategy || saving} className="bg-primary glow-primary-sm gap-2 min-w-36">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                     {saving ? 'Creating...' : 'Create Campaign'}
                   </Button>

@@ -82,7 +82,7 @@ export default function GenerateContentModal({ campaign, onGenerate, onClose }) 
 
         <Button
           onClick={() => onGenerate({ platform, type, count })}
-          className="w-full mt-6 bg-primary glow-purple-sm gap-2 font-medium"
+          className="w-full mt-6 bg-primary glow-primary-sm gap-2 font-medium"
         >
           <Sparkles className="w-4 h-4" />
           Generate {count} {type.replace('_', ' ')} for {platform}

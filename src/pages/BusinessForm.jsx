@@ -218,7 +218,7 @@ export default function BusinessForm() {
 
         <div className="flex gap-3 justify-end">
           <Button variant="outline" onClick={() => navigate('/businesses')}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!form.name || saving} className="bg-primary glow-purple-sm gap-2 min-w-32">
+          <Button onClick={handleSave} disabled={!form.name || saving} className="bg-primary glow-primary-sm gap-2 min-w-32">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Business'}
           </Button>

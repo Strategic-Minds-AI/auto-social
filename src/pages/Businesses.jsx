@@ -40,7 +40,7 @@ export default function Businesses() {
         </div>
         <Button
           onClick={() => navigate('/businesses/new')}
-          className="bg-primary hover:bg-primary/90 glow-purple-sm font-medium gap-2"
+          className="bg-primary hover:bg-primary/90 glow-primary-sm font-medium gap-2"
         >
           <Plus className="w-4 h-4" /> New Business
         </Button>
@@ -72,7 +72,7 @@ export default function Businesses() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.07 }}
               onClick={() => handleSelect(b)}
-              className="group relative bg-card border border-border rounded-xl p-5 cursor-pointer hover:border-primary/50 hover:glow-purple-sm transition-all duration-200"
+              className="group relative bg-card border border-border rounded-xl p-5 cursor-pointer hover:border-primary/50 hover:glow-primary-sm transition-all duration-200"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
