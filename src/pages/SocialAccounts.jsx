@@ -4,14 +4,13 @@ import { base44 } from '@/api/base44Client';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Link2, Loader2, RefreshCw, Unlink, CheckCircle2, AlertTriangle, Info, Facebook } from 'lucide-react';
+import { Link2, Loader2, RefreshCw, Unlink, CheckCircle2, AlertTriangle, Info, Facebook, Instagram } from 'lucide-react';
 import { statusLabel } from '@/components/scheduling/StatusBadge';
 import { cn } from '@/lib/utils';
 
 // Platforms with no authorized integration yet. Shown as an explicit unavailable
 // state rather than hidden, so nobody assumes publishing works there.
 const UNAVAILABLE = [
-  { id: 'instagram', label: 'Instagram Business' },
   { id: 'linkedin', label: 'LinkedIn' },
   { id: 'x', label: 'X' },
   { id: 'tiktok', label: 'TikTok' },
@@ -26,6 +25,9 @@ export default function SocialAccounts() {
   const [connected, setConnected] = useState(true);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
+  const [igAccount, setIgAccount] = useState(null);
+  const [igNote, setIgNote] = useState('');
+  const [igLoading, setIgLoading] = useState(true);
 
   const loadLinked = useCallback(async () => {
     if (!business) {
@@ -48,8 +50,17 @@ export default function SocialAccounts() {
     setLoading(false);
   }, []);
 
+  const discoverInstagram = useCallback(async () => {
+    setIgLoading(true);
+    const res = await base44.functions.invoke('instagramAccount', { action: 'discover' });
+    setIgAccount(res.data?.account || null);
+    setIgNote(res.data?.connected === false ? res.data.error || 'Instagram is not connected.' : '');
+    setIgLoading(false);
+  }, []);
+
   useEffect(() => { discover(); }, [discover]);
   useEffect(() => { loadLinked(); }, [loadLinked]);
+  useEffect(() => { discoverInstagram(); }, [discoverInstagram]);
 
   const link = async (page) => {
     setBusy(page.id);
@@ -84,14 +95,41 @@ export default function SocialAccounts() {
     }
   };
 
+  const linkInstagram = async () => {
+    setBusy('ig-link');
+    try {
+      await base44.functions.invoke('instagramAccount', { action: 'link', business_id: business.id });
+      toast({ title: 'Instagram linked', description: 'Cleared Reels can now publish to this account.' });
+      await loadLinked();
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not link Instagram',
+        description: err?.response?.data?.error || err.message,
+      });
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const unlinkInstagram = async (account) => {
+    setBusy('ig-unlink');
+    try {
+      await base44.functions.invoke('instagramAccount', { action: 'unlink', account_id: account.id });
+      await loadLinked();
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Could not unlink', description: err?.response?.data?.error || err.message });
+    } finally {
+      setBusy('');
+    }
+  };
+
   const verify = async () => {
     setBusy('verify');
     try {
-      const res = await base44.functions.invoke('facebookAccounts', {
-        action: 'verify',
-        business_id: business.id,
-      });
-      setLinked(res.data?.accounts || []);
+      await base44.functions.invoke('facebookAccounts', { action: 'verify', business_id: business.id });
+      await base44.functions.invoke('instagramAccount', { action: 'verify', business_id: business.id });
+      await loadLinked();
       toast({ title: 'Connections checked' });
     } finally {
       setBusy('');
@@ -118,6 +156,7 @@ export default function SocialAccounts() {
   }
 
   const linkedIds = new Set(linked.map((a) => a.external_id));
+  const igLinkedAccount = linked.find((a) => a.platform === 'instagram') || null;
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-8">
@@ -126,13 +165,13 @@ export default function SocialAccounts() {
           <Facebook className="w-6 h-6 text-primary" /> Social Accounts
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Link the Pages {business.name} publishes to. Only accounts linked here can receive scheduled posts.
+          Link the accounts {business.name} publishes to. Only accounts linked here can receive scheduled posts.
         </p>
       </div>
 
       <section className="bg-card border border-border rounded-xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 className="font-space font-semibold text-lg">Linked Pages</h2>
+          <h2 className="font-space font-semibold text-lg">Linked accounts</h2>
           <Button variant="outline" size="sm" onClick={verify} disabled={busy === 'verify' || !linked.length} className="gap-2">
             {busy === 'verify' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             Re-check connections
@@ -141,7 +180,7 @@ export default function SocialAccounts() {
 
         {!linked.length ? (
           <p className="text-sm text-muted-foreground">
-            No Page linked yet. Choose one from the Facebook Pages below.
+            No account linked yet. Choose a Facebook Page below, or link Instagram for Reels.
           </p>
         ) : (
           <div className="space-y-2">
@@ -150,8 +189,8 @@ export default function SocialAccounts() {
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{account.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    Page id {account.external_id}
-                    {account.business_manager_name ? ` · via ${account.business_manager_name}` : ''}
+                    {account.platform === 'instagram' ? 'Instagram account' : 'Page'} id {account.external_id}
+                    {account.platform === 'facebook' && account.business_manager_name ? ` · via ${account.business_manager_name}` : ''}
                     {account.last_verified_at ? ` · checked ${new Date(account.last_verified_at).toLocaleDateString()}` : ''}
                   </p>
                 </div>
@@ -231,6 +270,58 @@ export default function SocialAccounts() {
       </section>
 
       <section className="bg-card border border-border rounded-xl p-6">
+        <h2 className="font-space font-semibold text-lg mb-1 flex items-center gap-2">
+          <Instagram className="w-5 h-5 text-primary" /> Instagram Reels
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Reels your content plan produces publish here. A Reel goes out once its video has been cleared in Video Studio.
+        </p>
+
+        {igLoading ? (
+          <div className="flex items-center gap-3 text-muted-foreground py-2">
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+            <span className="text-sm">Reading your Instagram account…</span>
+          </div>
+        ) : !igAccount ? (
+          <p className="text-sm text-muted-foreground flex gap-1.5 bg-surface-2 border border-border rounded-lg p-3">
+            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {igNote || 'Instagram is not connected.'}
+          </p>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-2 border border-border rounded-lg p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">{igAccount.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {igLinkedAccount
+                  ? `Linked to ${business.name}${
+                      igLinkedAccount.last_verified_at
+                        ? ` · checked ${new Date(igLinkedAccount.last_verified_at).toLocaleDateString()}`
+                        : ''
+                    }`
+                  : 'Not linked to this business yet'}
+              </p>
+            </div>
+            {igLinkedAccount ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => unlinkInstagram(igLinkedAccount)}
+                disabled={busy === 'ig-unlink'}
+                className="text-muted-foreground hover:text-destructive gap-1.5 shrink-0"
+              >
+                {busy === 'ig-unlink' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlink className="w-3.5 h-3.5" />}
+                Unlink
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={linkInstagram} disabled={busy === 'ig-link'} className="gap-1.5 shrink-0">
+                {busy === 'ig-link' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+                Link
+              </Button>
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-card border border-border rounded-xl p-6">
         <h2 className="font-space font-semibold text-lg mb-1">Not connected</h2>
         <p className="text-sm text-muted-foreground mb-4">
           These networks have no authorized connection, so posts targeting them cannot be published yet. They can still be
@@ -247,8 +338,9 @@ export default function SocialAccounts() {
       </section>
 
       <p className="text-xs text-muted-foreground">
-        Publishing permission on Facebook is granted by the Pages you select. Posts move through {statusLabel('planned')} →{' '}
-        {statusLabel('approved')} → {statusLabel('scheduled')} → {statusLabel('published')}.
+        Facebook posts publish through the Page you link; Instagram Reels publish through the linked Instagram account once their video has
+        been cleared. Posts move through {statusLabel('planned')} → {statusLabel('approved')} → {statusLabel('scheduled')} →{' '}
+        {statusLabel('published')}.
       </p>
     </div>
   );

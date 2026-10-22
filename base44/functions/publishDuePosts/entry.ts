@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { appendHistory } from '../../shared/access.ts';
 import { publishToPage, pageTokenFor, postUrl } from '../../shared/facebook.ts';
+import { publishReelToInstagram, validateReelForInstagram } from '../../shared/instagram.ts';
 
 // Durable publishing job. Scheduled to run frequently; picks up every post whose
 // slot has passed, claims it exclusively, publishes it once, and records a receipt.
@@ -12,10 +13,17 @@ import { publishToPage, pageTokenFor, postUrl } from '../../shared/facebook.ts';
 // - idempotency_key plus a published-id check means a retry can never double-post
 // - attempts are bounded and spaced, so a broken connection fails visibly instead
 //   of retrying forever
+// - a platform whose integration is not connected is reported and left alone, so
+//   an outage cannot burn a post's attempts
 
 const BATCH_LIMIT = 10;
 const STALE_LOCK_MS = 10 * 60 * 1000;
 const RETRY_BACKOFF_MS = 5 * 60 * 1000;
+
+// The connector that backs each platform this pipeline can publish through.
+const CONNECTOR_FOR = { facebook: 'facebook_pages', instagram: 'instagram' };
+
+const ACCOUNT_LABEL = { facebook: 'Facebook Page', instagram: 'Instagram account' };
 
 async function claimPost(base44, post, token, now) {
   await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
@@ -28,6 +36,27 @@ async function claimPost(base44, post, token, now) {
   // Re-read to confirm this run actually holds the claim.
   const check = await base44.asServiceRole.entities.ScheduledPost.get(post.id).catch(() => null);
   return check && check.lock_token === token ? check : null;
+}
+
+async function publishToFacebookPage({ base44, post, account, message, connection }) {
+  let pageAccessToken;
+  try {
+    pageAccessToken = await pageTokenFor(account.external_id, connection.accessToken);
+  } catch (error) {
+    await base44.asServiceRole.entities.SocialAccount
+      .update(account.id, { status: 'needs_reauth' })
+      .catch(() => {});
+    throw error;
+  }
+
+  const outcome = await publishToPage({
+    pageId: account.external_id,
+    pageAccessToken,
+    message,
+    imageUrl: post.image_url || '',
+  });
+
+  return { external_post_id: outcome.postId, published_url: postUrl(account.external_id, outcome.postId) };
 }
 
 export default async function (req) {
@@ -74,25 +103,45 @@ export default async function (req) {
     }
 
     if (!candidates.length) {
-      return Response.json({ processed: 0, published: 0, failed: 0, skipped: candidates.length, results: [] });
+      return Response.json({ processed: 0, published: 0, failed: 0, skipped: 0, blocked: 0, results: [] });
     }
 
-    let connection = null;
-    try {
-      connection = await base44.asServiceRole.connectors.getConnection('facebook_pages');
-    } catch (error) {
-      return Response.json(
-        { processed: 0, published: 0, failed: 0, skipped: candidates.length, error: `Facebook is not connected: ${error.message}` },
-        { status: 200 }
-      );
+    // A missing connection is not the post's fault, so those posts are reported
+    // and left untouched instead of spending their publish attempts.
+    const connections = {};
+    const blocked = [];
+    for (const platform of Array.from(new Set(candidates.map((post) => post.platform)))) {
+      const connector = CONNECTOR_FOR[platform];
+      if (!connector) continue; // surfaced below as a per-post failure
+      try {
+        connections[platform] = await base44.asServiceRole.connectors.getConnection(connector);
+      } catch (error) {
+        for (const post of candidates.filter((p) => p.platform === platform)) {
+          blocked.push({ id: post.id, outcome: 'blocked', message: `${platform} is not connected: ${error.message}` });
+        }
+      }
     }
 
-    const results = [];
+    const blockedIds = new Set(blocked.map((entry) => entry.id));
+    const eligible = candidates.filter((post) => !blockedIds.has(post.id));
+
+    if (!eligible.length) {
+      return Response.json({
+        processed: 0,
+        published: 0,
+        failed: 0,
+        skipped: 0,
+        blocked: blocked.length,
+        results: blocked,
+      });
+    }
+
+    const results = [...blocked];
     let published = 0;
     let failed = 0;
     let skipped = 0;
 
-    for (const post of candidates) {
+    for (const post of eligible) {
       const token = `${user.id}-${post.id}-${nowMs}`;
       const claimed = await claimPost(base44, post, token, now);
       if (!claimed) {
@@ -132,31 +181,39 @@ export default async function (req) {
         results.push({ id: post.id, outcome: exhausted ? 'failed' : 'will_retry', message });
       };
 
-      if (post.platform !== 'facebook') {
+      if (!CONNECTOR_FOR[post.platform]) {
         await fail(`No publishing integration is connected for ${post.platform}.`);
         continue;
       }
+
+      const label = ACCOUNT_LABEL[post.platform] || 'account';
+
       if (!post.social_account_id) {
-        await fail('No Facebook Page is linked to this post.');
+        await fail(`No ${label} is linked to this post.`);
         continue;
       }
 
       const account = await base44.asServiceRole.entities.SocialAccount.get(post.social_account_id).catch(() => null);
       if (!account) {
-        await fail('The linked Facebook Page is no longer available.');
+        await fail(`The linked ${label} is no longer available.`);
         continue;
       }
 
-      let pageAccessToken;
-      try {
-        pageAccessToken = await pageTokenFor(account.external_id, connection.accessToken);
-      } catch (error) {
-        await base44.asServiceRole.entities.SocialAccount.update(account.id, { status: 'needs_reauth' }).catch(() => {});
-        await fail(error.message);
-        continue;
-      }
+      const message = [post.caption, post.hashtags].filter(Boolean).join('\n\n').trim() || post.title || '';
 
+      // Validation-only pass: every precondition is checked, nothing is sent.
       if (dryRun) {
+        try {
+          if (post.platform === 'instagram') {
+            await validateReelForInstagram({ base44, post });
+          } else {
+            await pageTokenFor(account.external_id, connections.facebook.accessToken);
+          }
+        } catch (error) {
+          await fail(error.message);
+          continue;
+        }
+
         await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
           status: 'scheduled',
           lock_token: '',
@@ -169,15 +226,17 @@ export default async function (req) {
         continue;
       }
 
-      const message = [post.caption, post.hashtags].filter(Boolean).join('\n\n').trim() || post.title || '';
-
       try {
-        const outcome = await publishToPage({
-          pageId: account.external_id,
-          pageAccessToken,
-          message,
-          imageUrl: post.image_url || '',
-        });
+        const outcome =
+          post.platform === 'instagram'
+            ? await publishReelToInstagram({ base44, post, account })
+            : await publishToFacebookPage({
+                base44,
+                post,
+                account,
+                message,
+                connection: connections.facebook,
+              });
 
         await base44.asServiceRole.entities.SocialAccount
           .update(account.id, { status: 'connected', last_verified_at: now })
@@ -185,27 +244,33 @@ export default async function (req) {
 
         const updated = await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
           status: 'published',
-          external_post_id: outcome.postId,
-          published_url: postUrl(account.external_id, outcome.postId),
+          external_post_id: outcome.external_post_id,
+          published_url: outcome.published_url || '',
           published_at: now,
           publish_error: '',
           lock_token: '',
           locked_at: '',
-          publish_history: appendHistory(claimed, 'published', `Published as ${outcome.postId}`),
+          publish_history: appendHistory(claimed, 'published', `Published as ${outcome.external_post_id}`),
         });
 
         published += 1;
-        results.push({ id: post.id, outcome: 'published', post_id: outcome.postId, url: updated?.published_url || '' });
+        results.push({ id: post.id, outcome: 'published', post_id: outcome.external_post_id, url: updated?.published_url || '' });
       } catch (error) {
+        if (error?.needsReauth) {
+          await base44.asServiceRole.entities.SocialAccount
+            .update(account.id, { status: 'needs_reauth' })
+            .catch(() => {});
+        }
         await fail(error.message);
       }
     }
 
     return Response.json({
-      processed: candidates.length,
+      processed: eligible.length,
       published,
       failed,
       skipped,
+      blocked: blocked.length,
       results,
       dry_run: dryRun,
     });

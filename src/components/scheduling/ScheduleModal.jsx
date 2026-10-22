@@ -31,7 +31,10 @@ export default function ScheduleModal({ post, accounts, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const isFacebook = post.platform === 'facebook';
+  // Platforms this app can actually publish to right now.
+  const canPublish = ['facebook', 'instagram'].includes(post.platform);
+  const platformAccounts = accounts.filter((a) => a.platform === post.platform);
+  const accountLabel = post.platform === 'instagram' ? 'an Instagram account' : 'a Facebook Page';
 
   const save = async () => {
     setSaving(true);
@@ -88,26 +91,26 @@ export default function ScheduleModal({ post, accounts, onClose, onSaved }) {
             </Select>
           </div>
 
-          {isFacebook && (
+          {canPublish && (
             <div className="space-y-2">
               <Label>Publish to</Label>
               <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger className="bg-input">
-                  <SelectValue placeholder={accounts.length ? 'Choose a Facebook Page' : 'No Page linked yet'} />
+                  <SelectValue placeholder={platformAccounts.length ? `Choose ${accountLabel}` : 'No account linked yet'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                  {platformAccounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              {!accounts.length && (
+              {!platformAccounts.length && (
                 <p className="text-xs text-amber-400 flex gap-1.5">
-                  <Info className="w-3 h-3 mt-0.5 shrink-0" /> Link a Facebook Page in Social Accounts first, or this post will fail when it is due.
+                  <Info className="w-3 h-3 mt-0.5 shrink-0" /> Link {accountLabel} in Social Accounts first, or this post will fail when it is due.
                 </p>
               )}
             </div>
           )}
 
-          {!isFacebook && (
+          {!canPublish && (
             <p className="text-xs text-amber-400 flex gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5">
               <Info className="w-3 h-3 mt-0.5 shrink-0" />
               Publishing to {post.platform} is not connected. You can schedule it, but it will not go out until a {post.platform} account is connected.

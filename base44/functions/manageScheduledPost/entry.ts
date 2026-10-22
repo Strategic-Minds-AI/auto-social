@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { resolvePost, appendHistory, maxAttempts } from '../../shared/access.ts';
 import { zonedToUtcIso, isValidTimeZone, DEFAULT_TIMEZONE } from '../../shared/time.ts';
 import { publishToPage, pageTokenFor, postUrl } from '../../shared/facebook.ts';
+import { publishReelToInstagram, validateReelForInstagram } from '../../shared/instagram.ts';
 
 // The approval and scheduling state machine.
 //
@@ -46,21 +47,49 @@ function scheduleFields(post, body, base44) {
 }
 
 async function publishOne({ base44, post, business, user, now, dryRun }) {
-  if (post.platform !== 'facebook') {
+  if (!['facebook', 'instagram'].includes(post.platform)) {
     return {
       ok: false,
       message: `Publishing to ${post.platform} is not connected. Connect an account for ${post.platform} before scheduling it.`,
     };
   }
 
+  const label = post.platform === 'instagram' ? 'Instagram account' : 'Facebook Page';
+
   const accountId = post.social_account_id;
   if (!accountId) {
-    return { ok: false, message: 'No Facebook Page is linked to this post. Choose one in Social Accounts.' };
+    return { ok: false, message: `No ${label} is linked to this post. Choose one in Social Accounts.` };
   }
 
   const account = await base44.entities.SocialAccount.get(accountId).catch(() => null);
   if (!account) {
-    return { ok: false, message: 'The linked Facebook Page is no longer available. Re-link it in Social Accounts.' };
+    return { ok: false, message: `The linked ${label} is no longer available. Re-link it in Social Accounts.` };
+  }
+
+  // Instagram publishes Reels, so it has its own path: the clip is validated and
+  // posted through the Instagram account, then the receipt comes back here.
+  if (post.platform === 'instagram') {
+    if (dryRun) {
+      try {
+        await validateReelForInstagram({ base44, post });
+      } catch (error) {
+        return { ok: false, message: error.message };
+      }
+      return { ok: true, dry: true, account_name: account.name, external_post_id: '', published_url: '' };
+    }
+
+    try {
+      const outcome = await publishReelToInstagram({ base44, post, account });
+      await base44.entities.SocialAccount
+        .update(account.id, { status: 'connected', last_verified_at: now })
+        .catch(() => {});
+      return { ok: true, external_post_id: outcome.external_post_id, published_url: outcome.published_url };
+    } catch (error) {
+      if (error?.needsReauth) {
+        await base44.entities.SocialAccount.update(account.id, { status: 'needs_reauth' }).catch(() => {});
+      }
+      return { ok: false, message: error.message };
+    }
   }
 
   const caption = [post.caption, post.hashtags].filter(Boolean).join('\n\n').trim();
