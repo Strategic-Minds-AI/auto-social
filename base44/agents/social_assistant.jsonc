@@ -56,6 +56,20 @@
         "read",
         "update"
       ]
+    },
+    {
+      "entity_name": "TrendSignal",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "function_name": "gatherDemandSignals",
+      "description": "Refresh the live market read for one industry: trending searches, top-performing videos in that industry, live news coverage and the owner's own measured posts."
+    },
+    {
+      "function_name": "simulateContentVariants",
+      "description": "Test several different versions of one content idea against the market signals and the owner's measured results, and report the version most likely to earn engagement."
     }
   ],
   "context_files": [],
