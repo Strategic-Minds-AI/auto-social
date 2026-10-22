@@ -1,0 +1,7 @@
+{
+  "type": "youtube",
+  "scopes": [
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "email"
+  ]
+}
