@@ -27,6 +27,7 @@ import Intelligence from '@/pages/Intelligence';
 import VideoStudio from '@/pages/VideoStudio';
 import MediaLibrary from '@/pages/MediaLibrary';
 import DemandRadar from '@/pages/DemandRadar';
+import Pipeline from '@/pages/Pipeline';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/leads" element={<Leads />} />
         <Route path="/intelligence" element={<Intelligence />} />
         <Route path="/demand-radar" element={<DemandRadar />} />
+        <Route path="/pipeline" element={<Pipeline />} />
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/businesses" element={<Businesses />} />
         <Route path="/businesses/new" element={<BusinessForm />} />
