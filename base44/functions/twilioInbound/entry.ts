@@ -90,6 +90,34 @@ export default async function (req) {
         status: 'received',
         twilio_sid: sid,
       }).catch(() => {});
+
+      // A stranger texting the business number is a customer enquiry, so it is
+      // filed into the lead pipeline rather than left sitting in the message log.
+      // Command words are not enquiries, and one open lead per number keeps a
+      // follow-up text from creating a second card.
+      const isCommand =
+        OPT_OUT.test(text) || OPT_IN.test(text) || APPROVE.test(text) || HOLD.test(text) || HELP.test(text);
+
+      if (!isCommand) {
+        const open = await db.Lead
+          .filter({ phone: from, status: { $ne: 'closed' } }, { limit: 1 })
+          .then((page) => (page?.items || []).length)
+          .catch(() => 0);
+
+        if (!open) {
+          await db.Lead.create({
+            name: from,
+            phone: from,
+            service: 'Text enquiry',
+            message: text.slice(0, 600),
+            source: 'sms',
+            source_ref: sid,
+            received_at: new Date().toISOString(),
+            status: 'new',
+          }).catch(() => {});
+        }
+      }
+
       return twiml('');
     }
 

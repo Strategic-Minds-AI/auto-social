@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain } from 'lucide-react';
+import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
 
@@ -9,6 +9,7 @@ const BRAND_LOGO =
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Analytics', path: '/analytics', icon: TrendingUp },
   { label: 'Intelligence', path: '/intelligence', icon: Brain },
   { label: 'Leads', path: '/leads', icon: Inbox },
   { label: 'Businesses', path: '/businesses', icon: Building2 },

@@ -18,6 +18,7 @@ import Calendar from '@/pages/Calendar';
 import ApprovalQueue from '@/pages/ApprovalQueue';
 import SocialAccounts from '@/pages/SocialAccounts';
 import Dashboard from '@/pages/Dashboard';
+import Analytics from '@/pages/Analytics';
 import Assistant from '@/pages/Assistant';
 import TextAlerts from '@/pages/TextAlerts';
 import Leads from '@/pages/Leads';
@@ -51,6 +52,7 @@ const AuthenticatedApp = () => {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<AppShell />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/analytics" element={<Analytics />} />
         <Route path="/leads" element={<Leads />} />
         <Route path="/intelligence" element={<Intelligence />} />
         <Route path="/assistant" element={<Assistant />} />

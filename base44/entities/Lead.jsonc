@@ -4,15 +4,15 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Enquirer's name"
+      "description": "Enquirer's name, or the number they texted from when a text carries no name"
     },
     "email": {
       "type": "string",
-      "description": "Enquirer's email address"
+      "description": "Enquirer's email address, when the enquiry came by email"
     },
     "phone": {
       "type": "string",
-      "description": "Phone number, only when the enquiry itself gave one"
+      "description": "Phone number the enquiry came from, or one given in the message"
     },
     "company": {
       "type": "string",
@@ -30,14 +30,15 @@
       "type": "string",
       "enum": [
         "email",
+        "sms",
         "manual"
       ],
       "default": "email",
-      "description": "Where the lead came from"
+      "description": "Which of the owner's communications this enquiry arrived on"
     },
     "source_ref": {
       "type": "string",
-      "description": "Gmail message id, so the same email is never filed twice"
+      "description": "Gmail message id or Twilio message id, so the same enquiry is never filed twice"
     },
     "received_at": {
       "type": "string",
@@ -59,9 +60,6 @@
       "description": "Owner's own notes on this lead"
     }
   },
-  "required": [
-    "email"
-  ],
   "rls": {
     "read": {
       "user_condition": {

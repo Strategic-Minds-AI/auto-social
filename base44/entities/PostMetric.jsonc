@@ -1,0 +1,158 @@
+{
+  "name": "PostMetric",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business these numbers belong to"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "App user who owns the business; set server-side so the owner can read their own numbers"
+    },
+    "social_account_id": {
+      "type": "string",
+      "description": "SocialAccount these numbers were read from"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "facebook",
+        "instagram",
+        "linkedin",
+        "x",
+        "tiktok",
+        "youtube"
+      ],
+      "default": "facebook"
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "post",
+        "page_day"
+      ],
+      "default": "post",
+      "description": "One row per post, or one row per day for the whole Page"
+    },
+    "post_id": {
+      "type": "string",
+      "description": "ScheduledPost this post belongs to, when it could be matched"
+    },
+    "external_post_id": {
+      "type": "string",
+      "description": "The platform's own id for the post"
+    },
+    "permalink_url": {
+      "type": "string"
+    },
+    "posted_at": {
+      "type": "string",
+      "description": "When the platform published the post"
+    },
+    "metric_date": {
+      "type": "string",
+      "description": "Day these numbers belong to, YYYY-MM-DD"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Researched topic the post was built on, carried over from the post so topics can be compared"
+    },
+    "pillar": {
+      "type": "string"
+    },
+    "caption_excerpt": {
+      "type": "string",
+      "description": "Start of the post copy, so the row reads without a join"
+    },
+    "views": {
+      "type": "number",
+      "description": "Media views: post media views, or Page media views on a day row"
+    },
+    "views_unique": {
+      "type": "number",
+      "description": "Unique views / reach, Page day rows only"
+    },
+    "engagements": {
+      "type": "number",
+      "description": "Reactions plus shares on a post, or the Page's post engagements on a day row"
+    },
+    "reactions": {
+      "type": "number"
+    },
+    "shares": {
+      "type": "number"
+    },
+    "followers": {
+      "type": "number",
+      "description": "Page followers at the time of the reading"
+    },
+    "page_views": {
+      "type": "number"
+    },
+    "captured_at": {
+      "type": "string",
+      "description": "When this reading was taken"
+    },
+    "source": {
+      "type": "string",
+      "default": "facebook_graph",
+      "description": "Where the numbers came from"
+    }
+  },
+  "required": [
+    "business_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
