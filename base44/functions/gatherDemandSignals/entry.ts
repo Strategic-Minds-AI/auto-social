@@ -333,11 +333,14 @@ export default async function (req) {
       );
     }
 
-    const ownItems = gathered.filter((item) => item.source === 'own_channel').slice(0, 4);
+    // Fixed share per source, so a big chart can never crowd out the search spikes
+    // or the owner's own numbers — every scan reads all three.
+    const ownItems = gathered.filter((item) => item.source === 'own_channel').slice(0, 3);
     const chartItems = gathered
       .filter((item) => item.source === 'youtube_most_popular')
-      .sort((a, b) => (b.views || 0) - (a.views || 0));
-    const spikeItems = gathered.filter((item) => item.source === 'google_trends_rising').slice(0, 8);
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, 15);
+    const spikeItems = gathered.filter((item) => item.source === 'google_trends_rising').slice(0, 6);
     const ordered = [...ownItems, ...chartItems, ...spikeItems].slice(0, MAX_SIGNALS);
 
     const counts = {
