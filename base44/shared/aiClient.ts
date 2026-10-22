@@ -6,6 +6,9 @@ const DEFAULT_MAX_TOKENS = 4000;
 const MAX_ATTEMPTS = 3;
 const REQUEST_TIMEOUT_MS = 120000;
 const RETRY_STATUSES = [408, 425, 429, 500, 502, 503, 504];
+// A busy shared gateway answers 429 with how long to wait, so the pause grows with
+// each attempt instead of hammering it.
+const RETRY_DELAYS_MS = [1000, 3000, 6000];
 
 function getSecret(name) {
   try {
@@ -70,7 +73,8 @@ async function postChat(config, body) {
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
-  return { ok: response.ok, status: response.status, text: await response.text() };
+  const retryAfter = Number(response.headers.get('retry-after')) || 0;
+  return { ok: response.ok, status: response.status, retryAfter, text: await response.text() };
 }
 
 /**
@@ -111,8 +115,10 @@ export async function generateJsonWithMeta(_base44, { prompt, schema, maxTokens,
   let lastError = null;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let waitMs = RETRY_DELAYS_MS[attempt - 1] || RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1];
     try {
-      const { ok, status, text } = await postChat(config, body);
+      const { ok, status, retryAfter, text } = await postChat(config, body);
+      if (retryAfter) waitMs = Math.min(retryAfter * 1000, 15000);
 
       if (!ok) {
         const retryable = RETRY_STATUSES.includes(status);
@@ -153,7 +159,7 @@ export async function generateJsonWithMeta(_base44, { prompt, schema, maxTokens,
     }
 
     if (attempt < MAX_ATTEMPTS) {
-      await sleep(500 * 2 ** (attempt - 1));
+      await sleep(waitMs);
     }
   }
 
@@ -164,4 +170,16 @@ export async function generateJsonWithMeta(_base44, { prompt, schema, maxTokens,
 export async function generateJson(base44, options) {
   const { data } = await generateJsonWithMeta(base44, options);
   return data;
+}
+
+/** Totals provider, model and tokens across every AI call one run made. */
+export function sumMeta(list) {
+  return (list || []).reduce(
+    (acc, meta) => ({
+      provider: meta?.provider || acc.provider,
+      model: meta?.model || acc.model,
+      total_tokens: acc.total_tokens + (Number(meta?.total_tokens) || 0),
+    }),
+    { provider: '', model: '', total_tokens: 0 }
+  );
 }

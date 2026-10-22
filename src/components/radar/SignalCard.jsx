@@ -3,9 +3,11 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Play, Search, UserX } from 'lucide-react';
 
 const SOURCE_LABELS = {
-  youtube_most_popular: 'Chart winner',
-  google_trends_rising: 'Search spike',
-  own_channel: 'Your own post',
+  youtube_topic_search: 'Top video for this industry',
+  youtube_most_popular: 'Most-popular video chart',
+  google_trends_rising: 'Trending searches',
+  google_news_latest: 'Live news coverage',
+  own_channel: 'Your own published post',
 };
 
 const PLATFORM_LABELS = {
@@ -16,6 +18,7 @@ const PLATFORM_LABELS = {
   x: 'X',
   tiktok: 'TikTok',
   google_trends: 'Google Trends',
+  google_news: 'News',
 };
 
 function compact(value) {
@@ -33,17 +36,44 @@ function clock(seconds) {
   return `${minutes}:${String(rest).padStart(2, '0')}`;
 }
 
+function day(value) {
+  if (!value) return '';
+  const stamp = new Date(value);
+  return Number.isNaN(stamp.getTime()) ? '' : stamp.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function freshness(value) {
+  if (!value) return '';
+  const stamp = new Date(value);
+  if (Number.isNaN(stamp.getTime())) return '';
+  const days = Math.max(0, Math.round((Date.now() - stamp.getTime()) / 86400000));
+  return days === 0 ? 'today' : days === 1 ? '1 day ago' : `${days} days ago`;
+}
+
 export default function SignalCard({ signal }) {
   const isSearch = signal.kind === 'search';
+  const isArticle = signal.kind === 'article';
   const length = clock(signal.duration_seconds);
   const stats = isSearch
-    ? [['Searches', compact(signal.approx_searches)], ['Momentum', signal.momentum || 'rising']]
-    : [
-        ['Views', compact(signal.views)],
-        ['Likes', compact(signal.likes)],
-        ['Comments', compact(signal.comments)],
-        ['Engagement', `${signal.engagement_rate || 0}%`],
-      ];
+    ? [
+        ['Searches', compact(signal.approx_searches)],
+        ['Momentum', signal.momentum || 'rising'],
+        ['Source', 'Google Trends'],
+        ['Kind', 'Rising search'],
+      ]
+    : isArticle
+      ? [
+          ['Outlet', signal.creator || 'unnamed'],
+          ['Published', day(signal.published_at) || '—'],
+          ['Freshness', freshness(signal.published_at) || '—'],
+          ['Kind', 'Live coverage'],
+        ]
+      : [
+          ['Views', compact(signal.views)],
+          ['Likes', compact(signal.likes)],
+          ['Comments', compact(signal.comments)],
+          ['Engagement', `${signal.engagement_rate || 0}%`],
+        ];
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 flex flex-col gap-3">
@@ -76,7 +106,14 @@ export default function SignalCard({ signal }) {
           {signal.url && <ExternalLink className="w-3.5 h-3.5 mt-1 shrink-0 opacity-60" />}
         </a>
         <p className="text-xs text-muted-foreground mt-1">
-          {[signal.creator, signal.category, length].filter(Boolean).join(' · ')}
+          {[
+            signal.creator,
+            signal.category && signal.category !== 'news' ? signal.category : '',
+            length,
+            isArticle ? day(signal.published_at) : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </p>
       </div>
 
@@ -116,6 +153,11 @@ export default function SignalCard({ signal }) {
           )}
         </div>
       )}
+
+      <p className="text-[11px] text-muted-foreground border-t border-border pt-2 mt-auto">
+        Source: {SOURCE_LABELS[signal.source] || signal.platform}
+        {signal.captured_at ? ` · read ${day(signal.captured_at)}` : ''}
+      </p>
     </div>
   );
 }

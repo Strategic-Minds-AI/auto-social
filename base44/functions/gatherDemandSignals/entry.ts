@@ -1,11 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import { generateJsonWithMeta } from '../../shared/aiClient.ts';
+import { generateJsonWithMeta, sumMeta } from '../../shared/aiClient.ts';
 import { fetchTrendingSearches } from '../../shared/trends.ts';
+import { fetchIndustryNews } from '../../shared/news.ts';
 import { checkAiBudget, recordAiUsage } from '../../shared/access.ts';
 
 // Demand radar. Reads what is genuinely winning in an industry from the sources
-// that are open to us — the public most-popular video chart and Google's public
-// trending-search feed — adds the business's own published numbers, then has the
+// that are open to us — the public most-popular video chart, Google's public
+// trending-search feed and live news coverage from named outlets — adds the business's own published numbers, then has the
 // model name the pattern behind each winner: the hook, why it worked, and whether
 // it can be made without a face on camera. Everything lands on TrendSignal so the
 // screen reads instantly next time. All AI work runs on the owner's own gateway,
@@ -23,6 +24,16 @@ const CHART_SCHEMA = {
     ids: { type: 'array', items: { type: 'string' } },
   },
   required: ['ids'],
+};
+
+// Named so the analyst knows what it is looking at: a chart-topper the platform is
+// pushing is weaker evidence than a video the industry's own audience rewarded.
+const SOURCE_TOKENS = {
+  youtube_topic_search: 'top-performing video about this industry',
+  youtube_most_popular: 'chart-topping video',
+  google_trends_rising: 'rising search',
+  google_news_latest: 'live news story',
+  own_channel: "the owner's own published post",
 };
 
 const PATTERN_SCHEMA = {
@@ -95,17 +106,6 @@ function clampScore(value, item) {
   return Math.min(Math.max(Math.round(number), 0), 100);
 }
 
-function sumMeta(list) {
-  return list.reduce(
-    (acc, meta) => ({
-      provider: meta?.provider || acc.provider,
-      model: meta?.model || acc.model,
-      total_tokens: acc.total_tokens + (Number(meta?.total_tokens) || 0),
-    }),
-    { provider: '', model: '', total_tokens: 0 }
-  );
-}
-
 async function youtubeToken(base44) {
   try {
     const connection = await base44.asServiceRole.connectors.getConnection('youtube');
@@ -113,6 +113,28 @@ async function youtubeToken(base44) {
   } catch {
     return '';
   }
+}
+
+// Fallback chart picker: the charts whose titles share words with the industry.
+// Only used when the model's own pick fails, so a scan still reads something
+// relevant for any industry rather than settling on an arbitrary chart.
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'with', 'that', 'this', 'from', 'your', 'our', 'you',
+  'are', 'a', 'an', 'of', 'in', 'on', 'to', 'by', 'or', 'at', 'as',
+]);
+
+function closestCharts(categories, industry) {
+  const wanted =
+    String(industry || '')
+      .toLowerCase()
+      .match(/[a-z0-9]+/g)
+      ?.filter((word) => word.length > 2 && !STOP_WORDS.has(word)) || [];
+  const scored = categories.map((category) => {
+    const title = String(category.title).toLowerCase().match(/[a-z0-9]+/g) || [];
+    return { id: category.id, hits: title.filter((word) => wanted.includes(word)).length };
+  });
+  const matched = scored.filter((row) => row.hits > 0).sort((a, b) => b.hits - a.hits);
+  return (matched.length ? matched : scored).slice(0, 2).map((row) => row.id);
 }
 
 // Ask the model which charts match the industry, then read each chart once.
@@ -151,7 +173,7 @@ Return the ids of up to 3 charts whose audience most closely matches the buyers 
     .map(String)
     .filter((id) => known.has(id))
     .slice(0, 3);
-  const ids = chosen.length ? chosen : [categories[0].id];
+  const ids = chosen.length ? chosen : closestCharts(categories, industry);
   const titleById = new Map(categories.map((category) => [category.id, category.title]));
 
   const settled = await Promise.allSettled(
@@ -200,6 +222,84 @@ Return the ids of up to 3 charts whose audience most closely matches the buyers 
   };
 }
 
+// Videos genuinely about this industry, ordered by views over the last month. The
+// category chart shows what the platform is pushing that day; this shows what the
+// industry's own audience is rewarding, which is what a content plan should copy.
+async function fetchTopicVideos({ accessToken, industry, region }) {
+  const headers = { Authorization: `Bearer ${accessToken}` };
+  const params = new URLSearchParams({
+    part: 'snippet',
+    type: 'video',
+    order: 'viewCount',
+    maxResults: '20',
+    regionCode: region,
+    q: industry.slice(0, 90),
+    publishedAfter: new Date(Date.now() - 30 * 86400000).toISOString(),
+  });
+
+  const searchResponse = await fetch(`${YOUTUBE_API}/search?${params.toString()}`, {
+    headers,
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!searchResponse.ok) {
+    return { items: [], note: `No industry videos this run: the search returned HTTP ${searchResponse.status}.` };
+  }
+  const searchData = await searchResponse.json();
+  const found = (searchData.items || [])
+    .map((row) => ({
+      id: row?.id?.videoId,
+      title: String(row?.snippet?.title || '').trim(),
+      channel: row?.snippet?.channelTitle || '',
+      published_at: row?.snippet?.publishedAt || '',
+    }))
+    .filter((row) => row.id && row.title);
+  if (!found.length) return { items: [], note: 'No industry videos this run: the search came back empty.' };
+
+  const unique = [...new Map(found.map((row) => [row.id, row])).values()];
+  const statsResponse = await fetch(
+    `${YOUTUBE_API}/videos?part=statistics,contentDetails&id=${unique.map((row) => row.id).join(',')}`,
+    { headers, signal: AbortSignal.timeout(15000) }
+  );
+  if (!statsResponse.ok) {
+    return { items: [], note: `No industry videos this run: the statistics read returned HTTP ${statsResponse.status}.` };
+  }
+  const statsData = await statsResponse.json();
+  const statsById = new Map((statsData.items || []).map((row) => [row.id, row]));
+
+  const items = unique.map((row) => {
+    const stats = statsById.get(row.id);
+    const views = Number(stats?.statistics?.viewCount) || 0;
+    const likes = Number(stats?.statistics?.likeCount) || 0;
+    const comments = Number(stats?.statistics?.commentCount) || 0;
+    const seconds = parseDuration(stats?.contentDetails?.duration);
+    return {
+      platform: 'youtube',
+      source: 'youtube_topic_search',
+      kind: 'video',
+      title: row.title,
+      url: `https://www.youtube.com/watch?v=${row.id}`,
+      creator: row.channel,
+      published_at: row.published_at,
+      duration_seconds: seconds,
+      format: shapeFromSeconds(seconds),
+      category: 'industry top videos',
+      views,
+      likes,
+      comments,
+      engagements: likes + comments,
+      engagement_rate: engagementRate({ views, likes, comments }),
+    };
+  });
+
+  const usable = items.filter((item) => item.title && item.views > 0).sort((a, b) => b.views - a.views);
+  return {
+    items: usable,
+    note: usable.length
+      ? `Found ${usable.length} top-performing videos posted about this industry in the last 30 days.`
+      : 'No industry videos this run: nothing recent ranked for that topic.',
+  };
+}
+
 function buildPatternPrompt({ industry, region, business, items }) {
   const businessLines = business
     ? `The owner's business: ${business.name}${business.industry ? ` (${business.industry})` : ''}.`
@@ -209,7 +309,7 @@ function buildPatternPrompt({ industry, region, business, items }) {
     .map((item, position) => {
       const shape = [
         `index ${position + 1}`,
-        item.kind,
+        SOURCE_TOKENS[item.source] || item.source,
         item.category || '',
         item.duration_seconds ? `${item.duration_seconds}s` : '',
       ]
@@ -218,7 +318,9 @@ function buildPatternPrompt({ industry, region, business, items }) {
       const numbers =
         item.kind === 'search'
           ? `approx searches ${item.approx_searches || 'unknown'}`
-          : `views ${item.views}, likes ${item.likes}, comments ${item.comments}, engagement rate ${item.engagement_rate}%`;
+          : item.kind === 'article'
+            ? `published ${item.published_at ? item.published_at.slice(0, 10) : 'recently'} by ${item.creator || 'an unnamed outlet'}`
+            : `views ${item.views}, likes ${item.likes}, comments ${item.comments}, engagement rate ${item.engagement_rate}%`;
       return `${shape}
 Title: ${item.title}
 By: ${item.creator || 'unknown'} | ${numbers}`;
@@ -229,9 +331,11 @@ By: ${item.creator || 'unknown'} | ${numbers}`;
 
 ${businessLines}
 
+The items are of four kinds: video (a chart-topping video), search (a rising search), article (live news coverage from a named outlet) and post (the owner's own published post with measured numbers).
+
 For every item, explain the pattern so the owner can make the same kind of content without copying it:
 - index: the item's index, exactly as given
-- score: 0 to 100 for how strong a template this is to learn from. Judge on engagement rate and how well it fits the industry, never on raw view count alone
+- score: 0 to 100 for how strong a template this is to learn from. Judge mainly on how well it fits this industry and on its engagement rate, never on raw view count alone. A chart-topping video from an unrelated genre, or a market-wide search that does not touch this industry, is weak evidence however big its numbers look: score those below 40, and score anything clearly unrelated below 20. The strongest evidence is a top-performing video about this industry, live coverage of it, or the owner's own measured post, and those should carry the highest scores
 - hook_type: 2 to 4 words naming the opening device, for example curiosity gap, shock stat, how-to promise, before-and-after, myth correction
 - hook_text: that opening rewritten as one fresh line this industry's business could actually say. Never reuse their wording
 - why_it_works: 1 to 2 sentences on the psychology that made it land
@@ -239,6 +343,8 @@ For every item, explain the pattern so the owner can make the same kind of conte
 - tags: 3 to 6 short pattern labels such as fast-cut, voiceover, text-overlay, single-take, b-roll
 - visual_style and audio_style: brief descriptions of how it looks and sounds
 - faceless_friendly: true when this could be made with no person on camera — stock footage, product shots, screen capture, text over b-roll
+
+For article items, hook_type is the angle of the story rather than a content format, hook_text is one line this business could post about it today, and takeaways are ways to join that conversation.
 
 Cover every index. Never invent numbers or claim data you were not given.
 
@@ -281,7 +387,7 @@ export default async function (req) {
           keyword: entry.title,
           momentum: 'rising',
           approx_searches: parseTraffic(entry.traffic),
-          url: '',
+          url: `https://trends.google.com/trending?geo=${region}`,
           creator: '',
           views: 0,
           likes: 0,
@@ -295,6 +401,33 @@ export default async function (req) {
       notes.push(`No search spikes this run: ${trends.reason}`);
     }
 
+    // Live coverage of the industry itself — the one source that works for any
+    // niche, in any market, and names the outlet behind every headline.
+    const news = await fetchIndustryNews({ query: industry, region, limit: 10 });
+    if (news.ok) {
+      news.entries.forEach((entry) => {
+        gathered.push({
+          platform: 'google_news',
+          source: 'google_news_latest',
+          kind: 'article',
+          title: entry.title,
+          url: entry.url,
+          creator: entry.publisher,
+          published_at: entry.published_at,
+          category: 'news',
+          momentum: 'steady',
+          views: 0,
+          likes: 0,
+          comments: 0,
+          engagements: 0,
+          engagement_rate: 0,
+        });
+      });
+      notes.push(`Read ${news.entries.length} pieces of live coverage about this industry from named outlets.`);
+    } else {
+      notes.push(`No live coverage this run: ${news.reason}`);
+    }
+
     const accessToken = await youtubeToken(base44);
     if (!accessToken) {
       notes.push(YOUTUBE_NOT_CONNECTED);
@@ -302,6 +435,10 @@ export default async function (req) {
       const chart = await fetchChart(base44, { accessToken, industry, region, metas });
       gathered.push(...chart.items);
       notes.push(chart.note);
+
+      const topicVideos = await fetchTopicVideos({ accessToken, industry, region });
+      gathered.push(...topicVideos.items);
+      notes.push(topicVideos.note);
     }
 
     if (business?.id) {
@@ -335,17 +472,19 @@ export default async function (req) {
 
     // Fixed share per source, so a big chart can never crowd out the search spikes
     // or the owner's own numbers — every scan reads all three.
+    const byViews = (a, b) => (b.views || 0) - (a.views || 0);
     const ownItems = gathered.filter((item) => item.source === 'own_channel').slice(0, 3);
-    const chartItems = gathered
-      .filter((item) => item.source === 'youtube_most_popular')
-      .sort((a, b) => (b.views || 0) - (a.views || 0))
-      .slice(0, 15);
-    const spikeItems = gathered.filter((item) => item.source === 'google_trends_rising').slice(0, 6);
-    const ordered = [...ownItems, ...chartItems, ...spikeItems].slice(0, MAX_SIGNALS);
+    const topicItems = gathered.filter((item) => item.source === 'youtube_topic_search').sort(byViews).slice(0, 9);
+    const chartItems = gathered.filter((item) => item.source === 'youtube_most_popular').sort(byViews).slice(0, 5);
+    const spikeItems = gathered.filter((item) => item.source === 'google_trends_rising').slice(0, 4);
+    const newsItems = gathered.filter((item) => item.source === 'google_news_latest').slice(0, 3);
+    const ordered = [...ownItems, ...topicItems, ...chartItems, ...spikeItems, ...newsItems].slice(0, MAX_SIGNALS);
 
     const counts = {
+      topic: ordered.filter((item) => item.source === 'youtube_topic_search').length,
       chart: ordered.filter((item) => item.source === 'youtube_most_popular').length,
       spikes: ordered.filter((item) => item.source === 'google_trends_rising').length,
+      news: ordered.filter((item) => item.source === 'google_news_latest').length,
       own: ordered.filter((item) => item.source === 'own_channel').length,
     };
 
@@ -385,7 +524,7 @@ export default async function (req) {
         creator: item.creator || '',
         published_at: item.published_at || '',
         duration_seconds: item.duration_seconds || 0,
-        format: item.format || (item.kind === 'search' ? 'search' : 'post'),
+        format: item.format || (item.kind === 'search' || item.kind === 'article' ? item.kind : 'post'),
         category: item.category || '',
         keyword: item.keyword || '',
         momentum: item.momentum || 'steady',

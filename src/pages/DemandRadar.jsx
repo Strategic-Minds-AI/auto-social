@@ -6,11 +6,14 @@ import { cn } from '@/lib/utils';
 import { Loader2, Radar } from 'lucide-react';
 import RadarControls from '@/components/radar/RadarControls';
 import SignalCard from '@/components/radar/SignalCard';
+import SourceStrip from '@/components/radar/SourceStrip';
+import SimulationPanel from '@/components/radar/SimulationPanel';
 
 const FILTERS = [
   { value: 'all', label: 'Everything' },
-  { value: 'winners', label: 'Chart winners' },
+  { value: 'winners', label: 'Top videos' },
   { value: 'spikes', label: 'Search spikes' },
+  { value: 'news', label: 'Live coverage' },
   { value: 'own', label: 'My own posts' },
 ];
 
@@ -89,8 +92,12 @@ export default function DemandRadar() {
   };
 
   const counts = [
-    { label: 'Chart winners', value: signals.filter((s) => s.source === 'youtube_most_popular').length },
+    {
+      label: 'Top videos',
+      value: signals.filter((s) => s.source === 'youtube_topic_search' || s.source === 'youtube_most_popular').length,
+    },
     { label: 'Search spikes', value: signals.filter((s) => s.source === 'google_trends_rising').length },
+    { label: 'Live coverage', value: signals.filter((s) => s.source === 'google_news_latest').length },
     { label: 'Your own posts', value: signals.filter((s) => s.source === 'own_channel').length },
   ];
 
@@ -104,9 +111,16 @@ export default function DemandRadar() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
+  // The hottest live signal is the natural thing to test first; the owner can type over it.
+  const topicSuggestion =
+    (signals.find((signal) => signal.source === 'google_trends_rising') || signals[0])?.title || industry;
+
   const visible = signals.filter((signal) => {
-    if (filter === 'winners') return signal.source === 'youtube_most_popular';
+    if (filter === 'winners') {
+      return signal.source === 'youtube_topic_search' || signal.source === 'youtube_most_popular';
+    }
     if (filter === 'spikes') return signal.source === 'google_trends_rising';
+    if (filter === 'news') return signal.source === 'google_news_latest';
     if (filter === 'own') return signal.source === 'own_channel';
     return true;
   });
@@ -142,9 +156,13 @@ export default function DemandRadar() {
         </div>
       )}
 
+      {signals.length > 0 && <SourceStrip signals={signals} />}
+
+      <SimulationPanel topicSuggestion={topicSuggestion} />
+
       {signals.length > 0 && (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {counts.map((tile) => (
               <div key={tile.label} className="bg-card border border-border rounded-xl p-4">
                 <p className="text-xs text-muted-foreground">{tile.label}</p>

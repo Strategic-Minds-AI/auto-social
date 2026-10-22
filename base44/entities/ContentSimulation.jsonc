@@ -1,0 +1,217 @@
+{
+  "name": "ContentSimulation",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this simulation was run for"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "App user who ran the simulation; set server-side"
+    },
+    "topic": {
+      "type": "string",
+      "description": "The subject or angle being tested"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "facebook",
+        "linkedin",
+        "x",
+        "tiktok",
+        "youtube"
+      ],
+      "default": "instagram"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "post",
+        "story",
+        "reel",
+        "short_video",
+        "image"
+      ],
+      "default": "post"
+    },
+    "goal": {
+      "type": "string",
+      "description": "What the owner wants this content to do"
+    },
+    "audience": {
+      "type": "string"
+    },
+    "tone": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "description": "The real signals and measured numbers this simulation was scored against",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "variants": {
+      "type": "array",
+      "description": "The competing versions, each with its predicted performance and reasoning",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "angle": {
+            "type": "string"
+          },
+          "hook": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "call_to_action": {
+            "type": "string"
+          },
+          "hashtags": {
+            "type": "string"
+          },
+          "predicted_score": {
+            "type": "number"
+          },
+          "predicted_engagement_rate": {
+            "type": "number"
+          },
+          "why_it_will_win": {
+            "type": "string"
+          },
+          "based_on": {
+            "type": "string"
+          },
+          "risks": {
+            "type": "string"
+          },
+          "pattern_tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ranking": {
+      "type": "array",
+      "description": "Variants in predicted order, best first",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "winner_label": {
+      "type": "string"
+    },
+    "winner_score": {
+      "type": "number"
+    },
+    "winner_hook": {
+      "type": "string"
+    },
+    "rubric": {
+      "type": "string",
+      "description": "How the ranking was judged, in plain language"
+    },
+    "signal_count": {
+      "type": "number",
+      "description": "How many live market signals fed the judgement"
+    },
+    "metric_count": {
+      "type": "number",
+      "description": "How many of the owner's measured posts fed the judgement"
+    },
+    "engine": {
+      "type": "string",
+      "description": "Which AI engine ran the simulation"
+    },
+    "model": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "topic"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

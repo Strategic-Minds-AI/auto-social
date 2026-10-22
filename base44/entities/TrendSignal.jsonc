@@ -31,12 +31,13 @@
         "linkedin",
         "x",
         "tiktok",
-        "google_trends"
+        "google_trends",
+        "google_news"
       ]
     },
     "source": {
       "type": "string",
-      "description": "Where this was read from: youtube_most_popular, google_trends_rising or own_channel"
+      "description": "Where this was read from: youtube_most_popular, google_trends_rising, google_news_latest or own_channel"
     },
     "kind": {
       "type": "string",
@@ -44,7 +45,8 @@
         "video",
         "image",
         "post",
-        "search"
+        "search",
+        "article"
       ]
     },
     "title": {
@@ -64,7 +66,7 @@
     },
     "format": {
       "type": "string",
-      "description": "Shape of the content: short_video, mid_video, long_video, image, post or search"
+      "description": "Shape of the content: short_video, mid_video, long_video, image, post, search or article"
     },
     "category": {
       "type": "string",
