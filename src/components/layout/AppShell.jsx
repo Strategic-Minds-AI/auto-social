@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp } from 'lucide-react';
+import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp, Images } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
 
@@ -15,6 +15,7 @@ const navItems = [
   { label: 'Businesses', path: '/businesses', icon: Building2 },
   { label: 'Campaigns', path: '/campaigns', icon: Megaphone },
   { label: 'Content Studio', path: '/studio', icon: Sparkles },
+  { label: 'Creative Asset Studio', path: '/creative-assets', icon: Images },
   { label: 'Video Studio', path: '/video-studio', icon: Film },
   { label: 'Calendar', path: '/calendar', icon: CalendarDays },
   { label: 'Approval Queue', path: '/approval-queue', icon: ListChecks },
