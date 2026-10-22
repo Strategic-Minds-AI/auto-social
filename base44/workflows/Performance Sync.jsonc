@@ -1,0 +1,45 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 6 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Every morning at 6am, reads the latest numbers for the posts on each connected Facebook Page and files them against the topic each post was built on, so the Analytics page and Eden always work from fresh figures. This runs on the Facebook connection and reads no AI, so it spends no integration credits.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "performance_sync",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_performance": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncPostMetrics",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Read the day's performance numbers",
+            "description": "Facebook Page views, matched to each post's topic"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Performance Sync"
+}
