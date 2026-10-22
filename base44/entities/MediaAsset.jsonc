@@ -1,0 +1,147 @@
+{
+  "name": "MediaAsset",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Owning business \u2014 scope all reads and writes to a business"
+    },
+    "title": {
+      "type": "string"
+    },
+    "file_name": {
+      "type": "string"
+    },
+    "media_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "video"
+      ]
+    },
+    "asset_url": {
+      "type": "string"
+    },
+    "mime_type": {
+      "type": "string"
+    },
+    "size_bytes": {
+      "type": "number"
+    },
+    "width": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "category": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "alt_text": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "upload",
+        "generated",
+        "derivative",
+        "drive_import"
+      ],
+      "default": "upload"
+    },
+    "source_asset_id": {
+      "type": "string"
+    },
+    "layout_id": {
+      "type": "string"
+    },
+    "platform_preset": {
+      "type": "string"
+    },
+    "classification_method": {
+      "type": "string",
+      "enum": [
+        "filename_rules",
+        "ai_metadata",
+        "human",
+        "vision_ai"
+      ],
+      "default": "filename_rules"
+    },
+    "classification_note": {
+      "type": "string"
+    },
+    "classification_confidence": {
+      "type": "number"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "review",
+        "approved",
+        "archived"
+      ],
+      "default": "draft"
+    }
+  },
+  "required": [
+    "business_id",
+    "media_type",
+    "asset_url"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
