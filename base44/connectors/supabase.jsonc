@@ -4,6 +4,9 @@
     "projects:read",
     "organizations:read",
     "database:read",
-    "database:write"
+    "database:write",
+    "edge_functions:write",
+    "secrets:write",
+    "storage:write"
   ]
 }
