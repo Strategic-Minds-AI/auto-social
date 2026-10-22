@@ -26,6 +26,7 @@ import Onboarding from '@/pages/Onboarding';
 import Intelligence from '@/pages/Intelligence';
 import VideoStudio from '@/pages/VideoStudio';
 import MediaLibrary from '@/pages/MediaLibrary';
+import DemandRadar from '@/pages/DemandRadar';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/leads" element={<Leads />} />
         <Route path="/intelligence" element={<Intelligence />} />
+        <Route path="/demand-radar" element={<DemandRadar />} />
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/businesses" element={<Businesses />} />
         <Route path="/businesses/new" element={<BusinessForm />} />
