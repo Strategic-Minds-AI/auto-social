@@ -25,6 +25,7 @@ import Leads from '@/pages/Leads';
 import Onboarding from '@/pages/Onboarding';
 import Intelligence from '@/pages/Intelligence';
 import VideoStudio from '@/pages/VideoStudio';
+import MediaLibrary from '@/pages/MediaLibrary';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
         <Route path="/social-accounts" element={<SocialAccounts />} />
         <Route path="/text-alerts" element={<TextAlerts />} />
         <Route path="/video-studio" element={<VideoStudio />} />
+        <Route path="/creative-assets" element={<MediaLibrary />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
