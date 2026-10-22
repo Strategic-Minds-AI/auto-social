@@ -206,30 +206,30 @@ The test harness used inline scripts against the live app: create a temporary bu
 Mission: make AUTO SOCIAL the Strategic Minds AI Marketing Department. One application; **no second scheduler** and no new standalone creative-service dependency.
 
 ### Read-back / provenance
-- Baseline checkpoint id: \`6ad9810b96c9f6dc0451f163\`; baseline SHA: \`bf823daafbb92c73db658a1e03f073512f99573f\`.
-- Strategic Intelligence Supabase project \`jadlpbokfdkonvnfxjzs\` is active; \`public.auto_social_*\` tables already exist, verified by a read-only schema query.
+- Baseline checkpoint id: `6ad9810b96c9f6dc0451f163`; baseline SHA: `bf823daafbb92c73db658a1e03f073512f99573f`.
+- Strategic Intelligence Supabase project `jadlpbokfdkonvnfxjzs` is active; `public.auto_social_*` tables already exist, verified by a read-only schema query.
 - Base44 connectors: Supabase active; Facebook Pages active; Google Drive active **with drive.readonly**, so Drive export/write is blocked.
-- Local source: \`C:\_Strategic_Minds_AI_OS\78_WEBSITE LAYOUTS\X1_Universal_Website_SIP_v1.0.0.zip\` read from the authorized device. Pattern catalog contains ten stable canonical layout IDs. Their design metadata was added in \`src/lib/x1LayoutCatalog.js\`.
-- Local creative kit under \`C:\_Strategic_Minds_AI_OS\74_AUTO SOCIAL\` and images under \`28_DIGITAL_ASSETS\` verified by directory listing (not imported or modified).
+- Local source: `C:\_Strategic_Minds_AI_OS\78_WEBSITE LAYOUTS\X1_Universal_Website_SIP_v1.0.0.zip` read from the authorized device. Pattern catalog contains ten stable canonical layout IDs. Their design metadata was added in `src/lib/x1LayoutCatalog.js`.
+- Local creative kit under `C:\_Strategic_Minds_AI_OS\74_AUTO SOCIAL` and images under `28_DIGITAL_ASSETS` verified by directory listing (not imported or modified).
 
 ### Integrated code
-- New \`/creative-assets\` route + navigation entry.
-- New \`MediaAsset\` entity schema: business association, media metadata, human classifications, derivation lineage and owner-or-admin RLS.
+- New `/creative-assets` route + navigation entry.
+- New `MediaAsset` entity schema: business association, media metadata, human classifications, derivation lineage and owner-or-admin RLS.
 - Images/videos: use existing Base44 UploadFile path; file size and count limited in UI; metadata/dimensions extraction; accessible library with search and category filters.
 - Resizer: 14 named target formats; actual browser canvas image exports to PNG and derivative save; originals untouched.
-- Video: JSON storyboard and existing \`/video-studio\` launch; CapCut-like timeline encoding, final video rendering and audio editing **not yet built**.
+- Video: JSON storyboard and existing `/video-studio` launch; CapCut-like timeline encoding, final video rendering and audio editing **not yet built**.
 - Existing prompt transformer reused for image/video/copy prompts and social variants. Existing AI text gateway and posting approval system untouched.
 - Vision-based media AI recognition **not yet active**; filenames generate low-confidence categories that the user may correct.
 - Imported canonical ten X1 website layout patterns; per-layout suggested media sizes are integration recipes, not source-declared canonical dimensions.
 
 ### Supabase staging, not applied
-- \`supabase/migrations/20261021_auto_social_creative_assets_DRAFT.sql\` creates dedicated \`auto_social_media_assets\`, \`auto_social_media_collections\`, and \`auto_social_creative_projects\` with RLS deny-all for direct anonymous/authenticated access until a trusted business membership mapping is validated.
+- `supabase/migrations/20261021_auto_social_creative_assets_DRAFT.sql` creates dedicated `auto_social_media_assets`, `auto_social_media_collections`, and `auto_social_creative_projects` with RLS deny-all for direct anonymous/authenticated access until a trusted business membership mapping is validated.
 - **Do not apply production DDL automatically.** Sync worker, secure private media bucket, write/read-back checks and identity mapping are pending; current media metadata writes via the Base44 entity only.
 - Base44-uploaded media URLs may be shareable; do not claim private object storage. The UI warns before users use shared links.
 
 ### QA / handoff
-- App's production \`vite build\` completed exit 0 before edits.
-- Targeted ESLint passed exit 0 and production \`vite build\` passed exit 0 after initial media module insertion; test evidence to be refreshed after canonical layout import.
+- App's production `vite build` completed exit 0 before edits.
+- Targeted ESLint passed exit 0 and production `vite build` passed exit 0 after initial media module insertion; test evidence to be refreshed after canonical layout import.
 - 14 export profiles and 10 patterns counted in a deterministic node check; filename-classifier rules checked against fixture names.
 - Browser upload, preview, media object lifecycle, CORS, real video encoding, Supabase sync, cross-tenant and independent Guardian QA NOT RUN, therefore NOT PASS.
-- See \`docs/marketing/CREATIVE_ASSET_INTEGRATION_HANDOFF.md\` for data flow, blockers and acceptance tests.
+- See `docs/marketing/CREATIVE_ASSET_INTEGRATION_HANDOFF.md` for data flow, blockers and acceptance tests.
