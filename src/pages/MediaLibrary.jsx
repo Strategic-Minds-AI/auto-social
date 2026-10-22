@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useActiveBusiness } from '@/hooks/useActiveBusiness';
 import { Button } from '@/components/ui/button';
-import { CATEGORIES, EXPORT_PRESETS, LAYOUTS, suggestFromFilename } from '@/lib/creativePresets';
+import { CATEGORIES, EXPORT_PRESETS, suggestFromFilename } from '@/lib/creativePresets';
+import { X1_LAYOUTS, X1_LAYOUT_SOURCE } from '@/lib/x1LayoutCatalog';
 import PromptTransformer from '@/components/intelligence/PromptTransformer';
 import {
   UploadCloud, Image as ImageIcon, Film, Search, Loader2, Download, Copy,
@@ -84,7 +85,7 @@ export default function MediaLibrary() {
   const [exporting, setExporting] = useState(false);
   const [tagsEdit, setTagsEdit] = useState('');
   const [categoryEdit, setCategoryEdit] = useState('Unsorted');
-  const [layoutDefs, setLayoutDefs] = useState(LAYOUTS);
+  const [layoutDefs, setLayoutDefs] = useState(X1_LAYOUTS);
   const [storyboard, setStoryboard] = useState([]);
   const [storyTitle, setStoryTitle] = useState('');
 
@@ -211,7 +212,7 @@ export default function MediaLibrary() {
   };
 
   if (!ready) return <div className="p-8 text-muted-foreground">Loading your marketing workspace…</div>;
-  if (!business?.id) return <div className="p-8"><h1 className="text-2xl font-semibold">Creative Asset Studio</h1><p className="mt-3">Choose or create a business to organize assets privately.</p><Link className="underline text-primary" to="/businesses">Open businesses</Link></div>;
+  if (!business?.id) return <div className="p-8"><h1 className="text-2xl font-semibold">Creative Asset Studio</h1><p className="mt-3">Choose or create a business to organize assets by business.</p><Link className="underline text-primary" to="/businesses">Open businesses</Link></div>;
 
   return (
     <div className="max-w-7xl mx-auto p-5 lg:p-8 space-y-6">
@@ -274,6 +275,7 @@ export default function MediaLibrary() {
                   <Plus className="w-4 h-4" />Add to storyboard</Button>
                 <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => { navigator.clipboard.writeText(selected.asset_url).then(() => setStatus('Asset URL copied.')).catch(() => setError('Clipboard access denied.')); }}>
                   <Copy className="w-4 h-4" />Copy asset URL</Button>
+                <p className="text-[11px] text-muted-foreground">Shared links may be publicly accessible. Do not copy links to confidential media until private storage is enabled.</p>
               </> : <p className="text-sm text-muted-foreground">Select an asset to see its category, metadata and actions.</p>}
             </aside>
           </div>}
@@ -303,13 +305,16 @@ export default function MediaLibrary() {
 
       {section === 'layouts' && <div className="space-y-5">
         <div className="flex flex-wrap gap-3 justify-between items-center">
-          <p className="text-sm text-muted-foreground">10 starter layout recipes and image slots. Import your Universal Website Layout definitions without overwriting the defaults.</p>
+          <p className="text-sm text-muted-foreground">10 patterns imported from your X1 Universal Website SIP v1.0.0 (local source verified). Suggested media slots are editable. Import another JSON layout catalog for this session.</p>
           <Button variant="outline" className="gap-2" onClick={() => layoutRef.current?.click()}><UploadCloud className="w-4 h-4" />Import layout JSON</Button>
           <input ref={layoutRef} type="file" accept=".json,application/json" className="hidden" onChange={(e) => importLayouts(e.target.files?.[0])} />
         </div>
+        <p className="text-xs text-muted-foreground">Source: {X1_LAYOUT_SOURCE.filename} · pattern catalog {X1_LAYOUT_SOURCE.version} · import overrides are session-only</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {layoutDefs.map((layout) => <div key={layout.id} className="border border-border rounded-xl bg-card p-4 space-y-3">
             <div className="flex items-center gap-2 font-semibold text-sm"><Layers className="w-4 h-4 text-primary" />{layout.name}</div>
+            {layout.visual && <p className="text-xs text-muted-foreground">{layout.visual}</p>}
+            {layout.recommendedGoal && <p className="text-xs text-primary">Goal: {layout.recommendedGoal}</p>}
             <ul className="text-xs text-muted-foreground space-y-1">{layout.slots.map((s,i) => <li key={i}>• {s}</li>)}</ul>
             <Button variant="outline" size="sm" onClick={() => { setPresetId('website_hero'); setSection('resize'); }}>Prepare images</Button>
           </div>)}
