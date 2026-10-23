@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { appendHistory } from '../../shared/access.ts';
 import { publishToPage, pageTokenFor, postUrl } from '../../shared/facebook.ts';
 import { publishReelToInstagram, validateReelForInstagram } from '../../shared/instagram.ts';
+import { linkedinProfile, publishToLinkedIn } from '../../shared/linkedin.ts';
 
 // Durable publishing job. Scheduled to run frequently; picks up every post whose
 // slot has passed, claims it exclusively, publishes it once, and records a receipt.
@@ -21,9 +22,13 @@ const STALE_LOCK_MS = 10 * 60 * 1000;
 const RETRY_BACKOFF_MS = 5 * 60 * 1000;
 
 // The connector that backs each platform this pipeline can publish through.
-const CONNECTOR_FOR = { facebook: 'facebook_pages', instagram: 'instagram' };
+const CONNECTOR_FOR = { facebook: 'facebook_pages', instagram: 'instagram', linkedin: 'linkedin' };
 
-const ACCOUNT_LABEL = { facebook: 'Facebook Page', instagram: 'Instagram account' };
+const ACCOUNT_LABEL = {
+  facebook: 'Facebook Page',
+  instagram: 'Instagram account',
+  linkedin: 'LinkedIn account',
+};
 
 async function claimPost(base44, post, token, now) {
   await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
@@ -57,6 +62,17 @@ async function publishToFacebookPage({ base44, post, account, message, connectio
   });
 
   return { external_post_id: outcome.postId, published_url: postUrl(account.external_id, outcome.postId) };
+}
+
+// A LinkedIn post publishes to the member's own feed, with the post copy as its
+// commentary and the post image uploaded ahead of it.
+async function publishToLinkedInAccount({ post, account, message, connection }) {
+  return publishToLinkedIn({
+    accessToken: connection.accessToken,
+    authorUrn: account.external_id,
+    text: message,
+    imageUrl: post.image_url || '',
+  });
 }
 
 export default async function (req) {
@@ -206,6 +222,8 @@ export default async function (req) {
         try {
           if (post.platform === 'instagram') {
             await validateReelForInstagram({ base44, post });
+          } else if (post.platform === 'linkedin') {
+            await linkedinProfile(connections.linkedin.accessToken);
           } else {
             await pageTokenFor(account.external_id, connections.facebook.accessToken);
           }
@@ -227,16 +245,20 @@ export default async function (req) {
       }
 
       try {
-        const outcome =
-          post.platform === 'instagram'
-            ? await publishReelToInstagram({ base44, post, account })
-            : await publishToFacebookPage({
-                base44,
-                post,
-                account,
-                message,
-                connection: connections.facebook,
-              });
+        let outcome;
+        if (post.platform === 'instagram') {
+          outcome = await publishReelToInstagram({ base44, post, account });
+        } else if (post.platform === 'linkedin') {
+          outcome = await publishToLinkedInAccount({ post, account, message, connection: connections.linkedin });
+        } else {
+          outcome = await publishToFacebookPage({
+            base44,
+            post,
+            account,
+            message,
+            connection: connections.facebook,
+          });
+        }
 
         await base44.asServiceRole.entities.SocialAccount
           .update(account.id, { status: 'connected', last_verified_at: now })

@@ -32,9 +32,14 @@ export default function ScheduleModal({ post, accounts, onClose, onSaved }) {
   const [error, setError] = useState('');
 
   // Platforms this app can actually publish to right now.
-  const canPublish = ['facebook', 'instagram'].includes(post.platform);
+  const canPublish = ['facebook', 'instagram', 'linkedin'].includes(post.platform);
   const platformAccounts = accounts.filter((a) => a.platform === post.platform);
-  const accountLabel = post.platform === 'instagram' ? 'an Instagram account' : 'a Facebook Page';
+  const accountLabels = {
+    facebook: 'a Facebook Page',
+    instagram: 'an Instagram account',
+    linkedin: 'a LinkedIn account',
+  };
+  const accountLabel = accountLabels[post.platform] || 'an account';
 
   const save = async () => {
     setSaving(true);
