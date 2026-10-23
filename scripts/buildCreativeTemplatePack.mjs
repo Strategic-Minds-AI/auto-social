@@ -38,8 +38,10 @@ fs.writeFileSync(path.join(staging,'README.md'),[
 ].join('\n')+'\n');
 fs.copyFileSync(path.join(staging,'X1_100_Original_Website_Templates.json'),path.join(output,'X1-100-Website-Templates-v2.json'));
 const archive=path.join(output,'X1-100-Website-Templates-v2.zip');
-const pythonBinary=process.platform==='win32'?'python':'python3';
-const result=spawnSync(pythonBinary,['-m','zipfile','-c',archive,path.relative(root,staging)],{cwd:root,encoding:'utf8'});
+const psQuote=(value)=>"'"+String(value).replaceAll("'","''")+"'";
+const result=process.platform==='win32'
+ ? spawnSync('powershell.exe',['-NoProfile','-Command','Compress-Archive -Path '+psQuote(path.join(staging,'*'))+' -DestinationPath '+psQuote(archive)+' -Force'],{cwd:root,encoding:'utf8'})
+ : spawnSync('python3',['-m','zipfile','-c',archive,path.relative(root,staging)],{cwd:root,encoding:'utf8'});
 if(result.status!==0)throw Error('zip failed: '+result.stderr);
 fs.rmSync(path.join(root,'.templatepack-build'),{recursive:true,force:true});
 const report={templates:100,products:50,services:50,layoutPatterns:10,uniquePalettes:colors.size,files:templates.length,zipBytes:fs.statSync(archive).size,zipLocation:path.relative(root,archive)};
