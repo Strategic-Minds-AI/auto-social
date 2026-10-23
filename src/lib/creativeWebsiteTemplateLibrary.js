@@ -9,8 +9,8 @@ export const TEMPLATE_BENCHMARKS = [
  { label:'Shopify theme conversion comparison',url:'https://shopthemedetector.com/blog/best-shopify-themes-for-conversion/',method:'High-level product discovery and purchase-funnel patterns; benchmark context, not a claim of equal measured results'}
 ];
 function toHex(h,s,l){
- h=((h%360)+360)%360; const a=s*Math.min(l,1-l)/100;
- const f=n=>{const k=(n+h/30)%12;return l/100-a*Math.max(-1,Math.min(k-3,9-k,1));};
+ h=((h%360)+360)%360; const sN=s/100,lN=l/100; const a=sN*Math.min(lN,1-lN);
+ const f=n=>{const k=(n+h/30)%12;return lN-a*Math.max(-1,Math.min(k-3,9-k,1));};
  const cv=n=>Math.round(f(n)*255).toString(16).padStart(2,'0');
  return '#'+cv(0)+cv(8)+cv(4);
 }
