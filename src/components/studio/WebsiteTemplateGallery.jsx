@@ -67,9 +67,14 @@ export default function WebsiteTemplateGallery({onPrepareAssets,onUsePrompt}) {
     <h2 className="font-semibold text-xl">100 original industry website templates</h2>
     <p className="text-sm text-muted-foreground mt-1">{CREATIVE_TEMPLATE_COUNTS.services} service • {CREATIVE_TEMPLATE_COUNTS.products} product • {X1_LAYOUTS.length} canonical X1 layout patterns • 5 design styles</p>
    </div>
-   <Button onClick={()=>downloadFile(exportTemplatePackJson(),'X1-100-Website-Templates-v2.json','application/json')} variant="outline" className="gap-2">
-    <Download className="w-4 h-4" />Export full 100-template pack
-   </Button>
+   <div className="flex flex-wrap gap-2">
+    <a className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90" href="/template-packs/X1-100-Website-Templates-v2.zip" download>
+      <Download className="w-4 h-4" />Download 100-site ZIP
+    </a>
+    <Button onClick={()=>downloadFile(exportTemplatePackJson(),'X1-100-Website-Templates-v2.json','application/json')} variant="outline" className="gap-2">
+      <Download className="w-4 h-4" />Export design JSON
+    </Button>
+   </div>
   </div>
   <p className="text-xs text-muted-foreground">Benchmark-informed original designs; these are not copies of third-party templates or independently ranked top-100 winners. Preview content and imagery are placeholders until replaced with owned assets.</p>
   <div className="flex flex-wrap gap-2">
