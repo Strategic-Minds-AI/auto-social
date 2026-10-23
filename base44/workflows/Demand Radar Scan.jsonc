@@ -1,0 +1,48 @@
+{
+  "name": "Demand Radar Scan",
+  "description": "Every morning, re-reads the live market for each business's own industry - trending searches, top-performing videos and live news - so the Demand Radar and Eden always work from a fresh read instead of a stale one.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "30 5 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "demand_radar_scan",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "scan_every_industry": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "gatherDemandSignals",
+            "args": {
+              "scan_all": true,
+              "region": "US"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Refresh the Demand Radar",
+            "description": "One live market read per business"
+          }
+        }
+      }
+    ]
+  }
+}

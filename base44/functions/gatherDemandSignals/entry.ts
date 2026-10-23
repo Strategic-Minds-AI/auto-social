@@ -352,25 +352,22 @@ ITEMS
 ${lines}`;
 }
 
-export default async function (req) {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const body = await req.json().catch(() => ({}));
-    const industry = String(body.industry || '').trim().slice(0, 80);
-    const region = String(body.region || 'US').trim().toUpperCase().slice(0, 4) || 'US';
-    if (!industry) return Response.json({ error: 'Name the industry you want read.' }, { status: 400 });
-
+// One industry scan: gather the live sources, have the analyst name the pattern
+// behind each winner, then replace that industry's saved list. Shared by the
+// on-demand scan and the scheduled run, so both read the market identically.
+async function scanIndustry({ base44, industry, region, business, ownerId, user }) {
     const budget = await checkAiBudget(base44, user);
     if (!budget.ok) {
-      return Response.json({ error: budget.message, usage: budget.usage }, { status: budget.status });
+      return {
+        ok: false,
+        status: budget.status,
+        error: budget.message,
+        usage: budget.usage,
+        notes: [],
+        counts: null,
+        signals: [],
+      };
     }
-
-    const business = body.business_id
-      ? await base44.entities.Business.get(String(body.business_id)).catch(() => null)
-      : null;
 
     const notes = [];
     const gathered = [];
@@ -489,7 +486,7 @@ export default async function (req) {
     };
 
     if (!ordered.length) {
-      return Response.json({ industry, region, notes, counts, signals: [] });
+      return { ok: true, notes, counts, provider: '', signals: [] };
     }
 
     const { data, meta } = await generateJsonWithMeta(base44, {
@@ -514,7 +511,7 @@ export default async function (req) {
         industry,
         niche_key: nicheKey,
         business_id: business?.id || '',
-        owner_id: user.id,
+        owner_id: ownerId,
         region,
         platform: item.platform,
         source: item.source,
@@ -549,18 +546,103 @@ export default async function (req) {
     });
 
     // One list per industry, so rescanning replaces the previous read.
-    await base44.entities.TrendSignal.deleteMany({ niche_key: nicheKey, owner_id: user.id });
+    await base44.entities.TrendSignal.deleteMany({ niche_key: nicheKey, owner_id: ownerId });
     const saved = await base44.entities.TrendSignal.bulkCreate(records);
 
     await recordAiUsage(base44, user, sumMeta(metas));
 
-    return Response.json({
-      industry,
-      region,
+    return {
+      ok: true,
       notes,
       counts,
       provider: sumMeta(metas).provider,
       signals: Array.isArray(saved) ? saved : [],
+    };
+}
+
+export default async function (req) {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await req.json().catch(() => ({}));
+    const region = String(body.region || 'US').trim().toUpperCase().slice(0, 4) || 'US';
+
+    // The scheduled run: one read per business, so the radar is already fresh when
+    // the owner opens it. Admin-only, and every business is reported separately so
+    // one industry failing never hides the rest.
+    if (body.scan_all === true) {
+      if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+      const all = await base44.asServiceRole.entities.Business.list('-created_date', 200).catch(() => []);
+      const targets = (all || []).filter((entry) => String(entry.industry || '').trim());
+      const results = [];
+
+      for (const business of targets) {
+        const industry = String(business.industry).trim().slice(0, 80);
+        try {
+          const outcome = await scanIndustry({
+            base44,
+            industry,
+            region,
+            business,
+            ownerId: business.created_by_id || user.id,
+            user,
+          });
+          results.push({
+            business_id: business.id,
+            business_name: business.name,
+            industry,
+            ok: outcome.ok,
+            error: outcome.error || null,
+            signals: (outcome.signals || []).length,
+            notes: outcome.notes || [],
+          });
+          // Out of AI budget for today: stop rather than report the same wall
+          // once for every remaining business.
+          if (outcome.status === 429) break;
+        } catch (error) {
+          results.push({
+            business_id: business.id,
+            business_name: business.name,
+            industry,
+            ok: false,
+            error: error.message,
+            signals: 0,
+            notes: [],
+          });
+        }
+      }
+
+      return Response.json({
+        scan_all: true,
+        region,
+        scanned_at: new Date().toISOString(),
+        businesses: results.length,
+        results,
+      });
+    }
+
+    const industry = String(body.industry || '').trim().slice(0, 80);
+    if (!industry) return Response.json({ error: 'Name the industry you want read.' }, { status: 400 });
+
+    const business = body.business_id
+      ? await base44.entities.Business.get(String(body.business_id)).catch(() => null)
+      : null;
+
+    const outcome = await scanIndustry({ base44, industry, region, business, ownerId: user.id, user });
+    if (!outcome.ok) {
+      return Response.json({ error: outcome.error, usage: outcome.usage }, { status: outcome.status || 500 });
+    }
+
+    return Response.json({
+      industry,
+      region,
+      notes: outcome.notes,
+      counts: outcome.counts,
+      provider: outcome.provider,
+      signals: outcome.signals,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
