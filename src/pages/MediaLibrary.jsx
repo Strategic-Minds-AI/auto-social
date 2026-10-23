@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CATEGORIES, EXPORT_PRESETS, suggestFromFilename } from '@/lib/creativePresets';
 import { X1_LAYOUTS, X1_LAYOUT_SOURCE } from '@/lib/x1LayoutCatalog';
 import PromptTransformer from '@/components/intelligence/PromptTransformer';
+import WebsiteTemplateGallery from '@/components/studio/WebsiteTemplateGallery';
 import {
   UploadCloud, Image as ImageIcon, Film, Search, Loader2, Download, Copy,
   Grid2X2, Scissors, WandSparkles, CheckCircle2, AlertCircle, FolderOpen, Layers, Plus, X
@@ -15,6 +16,7 @@ const SECTIONS = [
   { id: 'library', label: 'Media Library', icon: FolderOpen },
   { id: 'resize', label: 'Resize & Export', icon: Scissors },
   { id: 'layouts', label: 'Website Layouts', icon: Grid2X2 },
+  { id: 'templates', label: '100 Website Templates', icon: Layers },
   { id: 'video', label: 'Video Storyboard', icon: Film },
   { id: 'prompt', label: 'AI Prompt Studio', icon: WandSparkles }
 ];
@@ -88,6 +90,7 @@ export default function MediaLibrary() {
   const [layoutDefs, setLayoutDefs] = useState(X1_LAYOUTS);
   const [storyboard, setStoryboard] = useState([]);
   const [storyTitle, setStoryTitle] = useState('');
+  const [templatePrompt, setTemplatePrompt] = useState('');
 
   const refresh = useCallback(async () => {
     if (!business?.id) { setAssets([]); return; }
@@ -310,6 +313,7 @@ export default function MediaLibrary() {
           <input ref={layoutRef} type="file" accept=".json,application/json" className="hidden" onChange={(e) => importLayouts(e.target.files?.[0])} />
         </div>
         <p className="text-xs text-muted-foreground">Source: {X1_LAYOUT_SOURCE.filename} · pattern catalog {X1_LAYOUT_SOURCE.version} · import overrides are session-only</p>
+        <Button variant="outline" onClick={() => setSection('templates')}>Browse 100 industry-ready designs and colors</Button>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {layoutDefs.map((layout) => <div key={layout.id} className="border border-border rounded-xl bg-card p-4 space-y-3">
             <div className="flex items-center gap-2 font-semibold text-sm"><Layers className="w-4 h-4 text-primary" />{layout.name}</div>
@@ -320,6 +324,11 @@ export default function MediaLibrary() {
           </div>)}
         </div>
       </div>}
+
+      {section === 'templates' && <WebsiteTemplateGallery
+        onPrepareAssets={(template) => { setPresetId('website_hero'); setSection('resize'); setStatus('Preparing image assets for: ' + template.name); }}
+        onUsePrompt={(template) => { setTemplatePrompt('Create a marketing campaign for ' + template.industry + ' using the ' + template.layoutName + ' layout and ' + template.style + ' design. Use colors ' + template.palette.background + ', ' + template.palette.accent + ', ' + template.palette.accentAlt + '. Goal: ' + template.recommendedGoal + '. Hero: ' + template.hero.headline + '. CTA: ' + template.hero.primaryCta + '. No invented claims, reviews, or prices.'); setSection('prompt'); }}
+      />}
 
       {section === 'video' && <div className="grid lg:grid-cols-[1fr_350px] gap-5">
         <div className="rounded-xl bg-card border border-border p-5 space-y-4">
@@ -342,7 +351,7 @@ export default function MediaLibrary() {
         </aside>
       </div>}
 
-      {section === 'prompt' && <div className="space-y-3"><p className="text-sm text-muted-foreground">Powered by AUTO SOCIAL's existing prompt transformer and AI gateway; output includes image/video briefs and channel-specific copy.</p><PromptTransformer business={business} /></div>}
+      {section === 'prompt' && <div className="space-y-3"><p className="text-sm text-muted-foreground">Powered by AUTO SOCIAL's existing prompt transformer and AI gateway; output includes image/video briefs and channel-specific copy.</p><PromptTransformer business={business} initialSentence={templatePrompt} /></div>}
     </div>
   );
 }
