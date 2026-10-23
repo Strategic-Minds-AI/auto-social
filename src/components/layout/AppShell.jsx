@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp, Images, Radar, Workflow } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
+import PromptEnhancer from '@/components/enhance/PromptEnhancer';
 
 const BRAND_LOGO =
   'https://media.base44.com/images/public/6ac4dd914af935b8c986b411/854a71ca3_836982562_28635455156118005_3935075842464884998_n.jpg';
@@ -103,6 +104,7 @@ export default function AppShell() {
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
+        <PromptEnhancer />
       </div>
     </div>
   );
