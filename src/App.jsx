@@ -29,6 +29,7 @@ import MediaLibrary from '@/pages/MediaLibrary';
 import DemandRadar from '@/pages/DemandRadar';
 import Discovery from '@/pages/Discovery';
 import Pipeline from '@/pages/Pipeline';
+import ProfileMakeover from '@/pages/ProfileMakeover';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/approval-queue" element={<ApprovalQueue />} />
         <Route path="/social-accounts" element={<SocialAccounts />} />
+        <Route path="/profile-makeover" element={<ProfileMakeover />} />
         <Route path="/text-alerts" element={<TextAlerts />} />
         <Route path="/video-studio" element={<VideoStudio />} />
         <Route path="/creative-assets" element={<MediaLibrary />} />

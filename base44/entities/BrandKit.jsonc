@@ -1,0 +1,177 @@
+{
+  "name": "BrandKit",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Business this brand was built to advertise"
+    },
+    "name": {
+      "type": "string",
+      "description": "The brand name that goes in the profile name field"
+    },
+    "handle": {
+      "type": "string",
+      "description": "Suggested handle, written with the leading @"
+    },
+    "handle_alternates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fallback handles in case the first is taken"
+    },
+    "niche": {
+      "type": "string",
+      "description": "The narrow subject this brand publishes about"
+    },
+    "audience": {
+      "type": "string"
+    },
+    "voice": {
+      "type": "string",
+      "description": "How this brand sounds in captions"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Bio written for the profile, inside the platform limit"
+    },
+    "link": {
+      "type": "string",
+      "description": "Destination the bio points at"
+    },
+    "palette": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Brand colours as hex codes, used across every visual"
+    },
+    "content_pillars": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The recurring themes this brand posts about"
+    },
+    "avatar_prompt": {
+      "type": "string",
+      "description": "Image brief the profile picture was generated from"
+    },
+    "banner_prompt": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "banner_url": {
+      "type": "string"
+    },
+    "grid_plan": {
+      "type": "array",
+      "description": "The first nine tiles, in the order they should be posted",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "number"
+          },
+          "hook": {
+            "type": "string"
+          },
+          "visual_prompt": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "hashtags": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot",
+          "hook",
+          "visual_prompt"
+        ]
+      }
+    },
+    "ad_use": {
+      "type": "string",
+      "description": "How to run paid ads from this brand"
+    },
+    "faceless": {
+      "type": "boolean",
+      "default": true,
+      "description": "Built to run without showing a face"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready"
+      ],
+      "default": "ready"
+    },
+    "engine": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

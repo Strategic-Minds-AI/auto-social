@@ -145,6 +145,24 @@ export function postUrl(pageId, postId) {
   return `https://www.facebook.com/${pageId}/posts/${bare}`;
 }
 
+/** What a Page currently shows a visitor, for a profile review. */
+export async function pageProfile(pageId, accessToken) {
+  const res = await graphGet(
+    `/${pageId}?fields=name,about,description,website,link,fan_count,followers_count,cover,picture{url}`,
+    accessToken
+  );
+  return {
+    name: res?.name || '',
+    about: res?.about || '',
+    description: res?.description || '',
+    website: res?.website || '',
+    link: res?.link || '',
+    followers: res?.followers_count ?? res?.fan_count ?? null,
+    cover_url: res?.cover?.source || '',
+    picture_url: res?.picture?.data?.url || '',
+  };
+}
+
 /** Current Page follower counts. Impressions/fans metrics are retired by Meta. */
 export async function pageFollowerCounts(pageId, pageAccessToken) {
   const res = await graphGet(`/${pageId}?fields=fan_count,followers_count`, pageAccessToken);

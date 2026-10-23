@@ -71,6 +71,23 @@ export async function instagramProfile(accessToken) {
   return { id: String(res?.id || ''), username: String(res?.username || '') };
 }
 
+/** The full profile a visitor sees, for a profile review. */
+export async function instagramProfileDetail(accessToken) {
+  const res = await igGet('me', accessToken, {
+    fields: 'id,username,name,biography,website,followers_count,media_count,profile_picture_url',
+  });
+  return {
+    id: String(res?.id || ''),
+    username: String(res?.username || ''),
+    name: String(res?.name || ''),
+    biography: String(res?.biography || ''),
+    website: String(res?.website || ''),
+    followers: res?.followers_count ?? null,
+    media_count: res?.media_count ?? null,
+    picture_url: String(res?.profile_picture_url || ''),
+  };
+}
+
 /** The clip a Reel publishes: the newest video the factory cleared for this post. */
 export async function reelVideoFor(base44, postId) {
   const page = await base44.asServiceRole.entities.VideoJob.filter(

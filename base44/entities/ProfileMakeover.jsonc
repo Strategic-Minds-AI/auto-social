@@ -1,0 +1,242 @@
+{
+  "name": "ProfileMakeover",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this account belongs to"
+    },
+    "brand_kit_id": {
+      "type": "string",
+      "description": "Brand the account is being rebranded to, when one was chosen"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "facebook",
+        "youtube"
+      ]
+    },
+    "account_id": {
+      "type": "string",
+      "description": "Linked SocialAccount this review was run for, when one exists"
+    },
+    "handle": {
+      "type": "string",
+      "description": "The profile as it is addressed today"
+    },
+    "read_ok": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the live profile was actually read"
+    },
+    "read_note": {
+      "type": "string",
+      "description": "Plain-language note on what the live read did"
+    },
+    "followers": {
+      "type": "number"
+    },
+    "posts_count": {
+      "type": "number"
+    },
+    "current_name": {
+      "type": "string"
+    },
+    "current_bio": {
+      "type": "string"
+    },
+    "current_link": {
+      "type": "string"
+    },
+    "score_total": {
+      "type": "number"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "scores": {
+      "type": "array",
+      "description": "The five things every visitor judges, scored out of 20 each",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "score",
+          "max",
+          "note"
+        ]
+      }
+    },
+    "fixes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "What to change first, in priority order"
+    },
+    "new_name": {
+      "type": "string",
+      "description": "Name field rewritten so it says what this account does"
+    },
+    "new_bio": {
+      "type": "string"
+    },
+    "new_link": {
+      "type": "string"
+    },
+    "new_highlights": {
+      "type": "array",
+      "description": "The highlight or playlist rail, in order, with what each one holds",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "guidance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "guidance"
+        ]
+      }
+    },
+    "pinned_plan": {
+      "type": "string",
+      "description": "What to pin and in what order"
+    },
+    "avatar_prompt": {
+      "type": "string"
+    },
+    "banner_prompt": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "banner_url": {
+      "type": "string"
+    },
+    "grid_plan": {
+      "type": "array",
+      "description": "The first nine posts that make the profile read as a promise",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "number"
+          },
+          "hook": {
+            "type": "string"
+          },
+          "visual_prompt": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "hashtags": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot",
+          "hook",
+          "visual_prompt"
+        ]
+      }
+    },
+    "ad_angles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Angles this account can advertise on once it is rebranded"
+    },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The exact order to make the changes in the app"
+    },
+    "engine": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "platform"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
