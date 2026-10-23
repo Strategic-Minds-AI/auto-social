@@ -9,7 +9,7 @@
     /* Strategic Minds AI palette: deep black ground, electric blue, silver, magenta accent */
     --background: 216 33% 3%;
     --foreground: 210 25% 94%;
-    --card: 214 35% 6%;
+    --card: 213 32% 9%;
     --card-foreground: 210 25% 94%;
     --popover: 214 35% 7%;
     --popover-foreground: 210 25% 94%;
@@ -18,12 +18,12 @@
     --secondary: 214 28% 11%;
     --secondary-foreground: 210 20% 82%;
     --muted: 214 29% 10%;
-    --muted-foreground: 212 16% 55%;
+    --muted-foreground: 211 18% 68%;
     --accent: 196 100% 50%;
     --accent-foreground: 216 33% 3%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 28% 15%;
+    --border: 210 13% 62%;
     --input: 214 28% 12%;
     --ring: 200 100% 50%;
     --radius: 0.75rem;
@@ -31,8 +31,8 @@
     --neon: 200 100% 50%;
     --neon-cyan: 190 100% 55%;
     --neon-pink: 285 91% 57%;
-    --surface: 214 33% 8%;
-    --surface-2: 214 28% 12%;
+    --surface: 213 28% 12%;
+    --surface-2: 213 26% 16%;
 
     --font-inter: 'Inter', sans-serif;
     --font-space: 'Space Grotesk', sans-serif;
@@ -48,6 +48,22 @@
   }
   h1, h2, h3, h4, h5 {
     font-family: var(--font-space);
+  }
+}
+
+@layer components {
+  /* Metallic edge on every card surface. Panels all use these three background
+     utilities, so one rule gives each of them the same silver outline, a lit top
+     edge and a soft drop shadow, which is what makes them sit above the glowing
+     background instead of sinking into it. An element with its own shadow class
+     keeps its own (the utilities layer wins over this one). */
+  .bg-card,
+  .bg-surface,
+  .bg-surface-2 {
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.12),
+      inset 0 0 22px hsl(0 0% 100% / 0.03),
+      0 14px 34px -14px hsl(0 0% 0% / 0.8);
   }
 }
 
@@ -77,5 +93,16 @@
   }
   .bg-surface-2 {
     background-color: hsl(var(--surface-2));
+  }
+
+  /* The depth behind everything: four soft light sources in the brand colours,
+     anchored to the viewport so the panels appear to float as the page scrolls. */
+  .app-glow {
+    background-image:
+      radial-gradient(1000px 700px at 8% -10%, hsl(var(--primary) / 0.22), transparent 62%),
+      radial-gradient(820px 620px at 100% 4%, hsl(var(--neon-pink) / 0.16), transparent 60%),
+      radial-gradient(1100px 800px at 52% 118%, hsl(var(--neon-cyan) / 0.14), transparent 66%),
+      radial-gradient(600px 600px at 80% 60%, hsl(var(--primary) / 0.08), transparent 70%);
+    background-attachment: fixed;
   }
 }
