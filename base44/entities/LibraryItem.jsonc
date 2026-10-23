@@ -1,0 +1,129 @@
+{
+  "name": "LibraryItem",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this pattern belongs to"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "hook",
+        "script",
+        "visual_template",
+        "editing_recipe",
+        "edit_sheet"
+      ],
+      "description": "Hook, script, visual template, editing method, or a finished edit sheet"
+    },
+    "title": {
+      "type": "string",
+      "description": "Short name the owner recognises it by"
+    },
+    "body": {
+      "type": "string",
+      "description": "The reusable pattern itself: the hook line, the script shape, the visual recipe, the editing method or the timed shot list"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pattern labels such as fast-cut, text-overlay, voiceover"
+    },
+    "platform": {
+      "type": "string",
+      "description": "Platform this pattern was written for, when one applies"
+    },
+    "format": {
+      "type": "string",
+      "description": "Shape of the content it was read from"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "radar",
+        "benchmark",
+        "studio",
+        "viral_editor"
+      ],
+      "default": "manual",
+      "description": "Where the pattern came from"
+    },
+    "source_label": {
+      "type": "string",
+      "description": "Title of the piece it was distilled from, so the library reads without a join"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Link to the original piece, when there is one"
+    },
+    "score": {
+      "type": "number",
+      "description": "How strong the source ranked, 0 to 100"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Why this pattern works"
+    },
+    "times_used": {
+      "type": "number",
+      "default": 0,
+      "description": "How many generations have been given this pattern"
+    },
+    "favorite": {
+      "type": "boolean",
+      "default": false,
+      "description": "Pinned to the top and preferred by generation"
+    }
+  },
+  "required": [
+    "business_id",
+    "kind",
+    "title",
+    "body"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

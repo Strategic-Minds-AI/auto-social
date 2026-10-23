@@ -8,6 +8,8 @@ import RadarControls from '@/components/radar/RadarControls';
 import SignalCard from '@/components/radar/SignalCard';
 import SourceStrip from '@/components/radar/SourceStrip';
 import SimulationPanel from '@/components/radar/SimulationPanel';
+import TopStylesPanel from '@/components/radar/TopStylesPanel';
+import { fromSignal, KIND_LABEL } from '@/lib/libraryItems';
 
 const FILTERS = [
   { value: 'all', label: 'Everything' },
@@ -29,6 +31,8 @@ export default function DemandRadar() {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
+  const [savedIds, setSavedIds] = useState([]);
+  const [scanSeq, setScanSeq] = useState(0);
 
   const loadSignals = useCallback(async (value) => {
     const key = nicheKey(value);
@@ -49,6 +53,7 @@ export default function DemandRadar() {
       setSignals([]);
     } finally {
       setLoading(false);
+      setScanSeq((count) => count + 1);
     }
   }, []);
 
@@ -101,15 +106,28 @@ export default function DemandRadar() {
     { label: 'Your own posts', value: signals.filter((s) => s.source === 'own_channel').length },
   ];
 
-  const topHooks = Object.entries(
-    signals.reduce((acc, signal) => {
-      const key = String(signal.hook_type || '').trim();
-      if (key) acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {})
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  // One signal carries a hook, a look and an editing method. Keeping it puts all
+  // three in the library, where the writer and the viral editor pick them up.
+  const saveSignal = async (signal) => {
+    const items = fromSignal(signal, business?.id);
+    if (!items.length) {
+      toast({
+        title: 'Nothing to keep from that one',
+        description: 'This signal carries no hook, look or editing method yet.',
+      });
+      return;
+    }
+    try {
+      await base44.entities.LibraryItem.bulkCreate(items);
+      setSavedIds((list) => [...list, signal.id]);
+      toast({
+        title: `${items.length} template${items.length > 1 ? 's' : ''} saved`,
+        description: items.map((item) => KIND_LABEL[item.kind]).join(' · '),
+      });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Could not save that pattern', description: error.message });
+    }
+  };
 
   // The hottest live signal is the natural thing to test first; the owner can type over it.
   const topicSuggestion =
@@ -171,16 +189,12 @@ export default function DemandRadar() {
             ))}
           </div>
 
-          {topHooks.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground">Patterns showing up:</span>
-              {topHooks.map(([hook, count]) => (
-                <span key={hook} className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-                  {hook} · {count}
-                </span>
-              ))}
-            </div>
-          )}
+          <TopStylesPanel
+            nicheKey={nicheKey(industry)}
+            businessId={business?.id}
+            platform={business?.primary_platforms?.[0] || ''}
+            scanSeq={scanSeq}
+          />
 
           <div className="flex flex-wrap gap-2">
             {FILTERS.map((option) => (
@@ -219,7 +233,12 @@ export default function DemandRadar() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {visible.map((signal) => (
-            <SignalCard key={signal.id} signal={signal} />
+            <SignalCard
+              key={signal.id}
+              signal={signal}
+              saved={savedIds.includes(signal.id)}
+              onSave={saveSignal}
+            />
           ))}
         </div>
       )}

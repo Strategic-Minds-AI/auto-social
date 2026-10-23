@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Play, Search, UserX } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BookmarkPlus, Check, ExternalLink, Play, Search, UserX } from 'lucide-react';
 
 const SOURCE_LABELS = {
   youtube_topic_search: 'Top video for this industry',
@@ -50,7 +51,7 @@ function freshness(value) {
   return days === 0 ? 'today' : days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
-export default function SignalCard({ signal }) {
+export default function SignalCard({ signal, onSave, saved }) {
   const isSearch = signal.kind === 'search';
   const isArticle = signal.kind === 'article';
   const length = clock(signal.duration_seconds);
@@ -154,10 +155,24 @@ export default function SignalCard({ signal }) {
         </div>
       )}
 
-      <p className="text-[11px] text-muted-foreground border-t border-border pt-2 mt-auto">
-        Source: {SOURCE_LABELS[signal.source] || signal.platform}
-        {signal.captured_at ? ` · read ${day(signal.captured_at)}` : ''}
-      </p>
+      <div className="flex items-center justify-between gap-2 border-t border-border pt-2 mt-auto">
+        <p className="text-[11px] text-muted-foreground">
+          Source: {SOURCE_LABELS[signal.source] || signal.platform}
+          {signal.captured_at ? ` · read ${day(signal.captured_at)}` : ''}
+        </p>
+        {onSave && (
+          <Button
+            size="sm"
+            variant={saved ? 'secondary' : 'outline'}
+            className="gap-1.5 text-xs shrink-0"
+            disabled={saved}
+            onClick={() => onSave(signal)}
+          >
+            {saved ? <Check className="w-3 h-3" /> : <BookmarkPlus className="w-3 h-3" />}
+            {saved ? 'In library' : 'Keep templates'}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

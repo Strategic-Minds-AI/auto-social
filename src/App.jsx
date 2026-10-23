@@ -30,6 +30,7 @@ import DemandRadar from '@/pages/DemandRadar';
 import Discovery from '@/pages/Discovery';
 import Pipeline from '@/pages/Pipeline';
 import ProfileMakeover from '@/pages/ProfileMakeover';
+import Library from '@/pages/Library';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -72,6 +73,7 @@ const AuthenticatedApp = () => {
         <Route path="/campaigns/:id" element={<CampaignDetail />} />
         <Route path="/content" element={<Content />} />
         <Route path="/studio" element={<Studio />} />
+        <Route path="/library" element={<Library />} />
         <Route path="/auto-social" element={<AutoSocial />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/approval-queue" element={<ApprovalQueue />} />

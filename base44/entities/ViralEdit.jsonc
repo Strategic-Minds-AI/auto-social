@@ -1,0 +1,150 @@
+{
+  "name": "ViralEdit",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this edit sheet was built for"
+    },
+    "title": {
+      "type": "string",
+      "description": "What this edit is for"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "facebook",
+        "linkedin",
+        "x",
+        "tiktok",
+        "youtube"
+      ],
+      "default": "instagram"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "reel",
+        "short_video",
+        "story",
+        "post",
+        "image"
+      ],
+      "default": "reel"
+    },
+    "hook": {
+      "type": "string",
+      "description": "The opening line the edit is built around"
+    },
+    "script": {
+      "type": "string",
+      "description": "The words being delivered"
+    },
+    "recipe_label": {
+      "type": "string",
+      "description": "Editing method from the library this sheet follows"
+    },
+    "recipe_note": {
+      "type": "string",
+      "description": "The editing method itself, as it was applied"
+    },
+    "target_seconds": {
+      "type": "number",
+      "description": "Length that was asked for"
+    },
+    "total_seconds": {
+      "type": "number",
+      "description": "Length of the beats as they stand"
+    },
+    "beats": {
+      "type": "array",
+      "description": "The canvas: one beat per cut, in the order it is watched",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "seconds": {
+            "type": "number"
+          },
+          "shot": {
+            "type": "string"
+          },
+          "on_screen_text": {
+            "type": "string"
+          },
+          "transition": {
+            "type": "string"
+          },
+          "audio": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "seconds",
+          "shot"
+        ]
+      }
+    },
+    "style_notes": {
+      "type": "string",
+      "description": "How the whole piece should feel: pacing, grade, captions, sound"
+    },
+    "engine": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

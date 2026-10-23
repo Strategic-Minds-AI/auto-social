@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { generateJsonWithMeta } from '../../shared/aiClient.ts';
 import { groundingBlock } from '../../shared/discovery.ts';
+import { libraryBlock } from '../../shared/library.ts';
 
 const PLATFORMS = ['instagram', 'facebook', 'linkedin', 'x', 'tiktok', 'youtube'];
 const FORMATS = ['post', 'story', 'reel', 'short_video', 'image'];
@@ -46,11 +47,12 @@ Brand tone: ${business.tone || 'professional'}
 Website: ${business.website || 'not specified'}`;
 }
 
-function buildPrompt({ mode, business, platform, format, tone, count, brief, existingText, discovery }) {
+function buildPrompt({ mode, business, platform, format, tone, count, brief, existingText, discovery, library }) {
   const voice = tone ? `Tone override: ${tone}` : `Tone: ${business.tone || 'professional'}`;
-  // The discovery plan rides along with every mode: the tags proven for this business
-  // and the patterns measured to win in its category.
-  const settings = `PLATFORM: ${platform}\nFORMAT: ${format}\n${voice}\nAudience: ${business.target_audience || 'the business audience'}${discovery ? `\n\n${discovery}` : ''}`;
+  // The discovery plan and the saved library ride along with every mode: the tags
+  // proven for this business, the patterns measured to win in its category, and
+  // the hooks, scripts and editing methods the owner has kept.
+  const settings = `PLATFORM: ${platform}\nFORMAT: ${format}\n${voice}\nAudience: ${business.target_audience || 'the business audience'}${discovery ? `\n\n${discovery}` : ''}${library ? `\n\n${library}` : ''}`;
 
   if (mode === 'rewrite') {
     return `You are the senior content writer inside Auto Social.
@@ -135,8 +137,23 @@ export default async function (req) {
     ]);
     const discovery = groundingBlock((seoPage.items || [])[0] || null, rulePage.items || [], platform);
 
+    // What the owner saved as proven. Absent means generation is unchanged.
+    const [hookPage, scriptPage, recipePage] = await Promise.all([
+      base44.entities.LibraryItem.filter({ business_id: business.id, kind: 'hook' }, { sort: '-score', limit: 5 }).catch(() => ({ items: [] })),
+      base44.entities.LibraryItem.filter({ business_id: business.id, kind: 'script' }, { sort: '-score', limit: 4 }).catch(() => ({ items: [] })),
+      base44.entities.LibraryItem
+        .filter({ business_id: business.id, kind: { $in: ['editing_recipe', 'visual_template'] } }, { sort: '-score', limit: 5 })
+        .catch(() => ({ items: [] })),
+    ]);
+    const savedPatterns = [...(hookPage.items || []), ...(scriptPage.items || []), ...(recipePage.items || [])];
+    const library = libraryBlock({
+      hooks: hookPage.items || [],
+      scripts: scriptPage.items || [],
+      recipes: recipePage.items || [],
+    });
+
     const { data, meta } = await generateJsonWithMeta(base44, {
-      prompt: buildPrompt({ mode, business, platform, format, tone: body.tone, count, brief, existingText, discovery }),
+      prompt: buildPrompt({ mode, business, platform, format, tone: body.tone, count, brief, existingText, discovery, library }),
       schema: PIECE_SCHEMA,
       maxTokens: 4000,
       temperature: mode === 'create' ? 0.85 : 0.7
@@ -165,6 +182,14 @@ export default async function (req) {
     }));
 
     const drafts = await base44.entities.ContentDraft.bulkCreate(records);
+
+    // The patterns that were handed to the writer get credited, so the library
+    // shows what actually earns its place.
+    if (savedPatterns.length) {
+      await base44.entities.LibraryItem
+        .bulkUpdate(savedPatterns.map((item) => ({ id: item.id, times_used: (Number(item.times_used) || 0) + 1 })))
+        .catch(() => {});
+    }
 
     return Response.json({
       created: records.length,
