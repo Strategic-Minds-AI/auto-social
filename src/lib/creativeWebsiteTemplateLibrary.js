@@ -28,7 +28,7 @@ function makeTemplate(industry,i,style,j){
  const [industryName,kind,slug,brand,focus,cta,cta2,headline,subtitle,hue,sections]=industry;
  const [styleName,styleId,bg,surface,text,muted,border,sat,light,font,designLanguage]=style;
  const accent=toHex((hue+j*13)%360,sat,light);
- const accentText=contrastRatio(accent,'#FFFFFF')>=4.5?'#FFFFFF':'#101728';
+ const accentText=contrastRatio(accent,'#FFFFFF')>=4.5?'#FFFFFF':'#000000';
  const accentAlt=toHex((hue+34+j*11)%360,j===3?75:55,j===0?59:42);
  const layout=X1_LAYOUTS[(i*3+j*2)%X1_LAYOUTS.length];
  const slots=layout.slots.map((slot,k)=>({id:slug+'-'+k,label:slot,purpose:k===0?'hero':'support',ratio:k===0?'16:9':'1:1'}));
