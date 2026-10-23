@@ -233,3 +233,19 @@ Mission: make AUTO SOCIAL the Strategic Minds AI Marketing Department. One appli
 - 14 export profiles and 10 patterns counted in a deterministic node check; filename-classifier rules checked against fixture names.
 - Browser upload, preview, media object lifecycle, CORS, real video encoding, Supabase sync, cross-tenant and independent Guardian QA NOT RUN, therefore NOT PASS.
 - See `docs/marketing/CREATIVE_ASSET_INTEGRATION_HANDOFF.md` for data flow, blockers and acceptance tests.
+
+---
+
+## Phase 4 — 100 Website Designs for Marketing Department (2026-10-22)
+
+- New catalog: 100 original templates (50 service + 50 product) added to Creative Asset Studio without replacing the 10 canonical X1 SIP layout patterns; total gallery assets now 110 (10 pattern recipes + 100 template variants).
+- Categories: 20 industries; five design style families; 100 unique background/accent palettes; 10 layout patterns used ten times each.
+- UI: Creative Asset Studio > 100 Website Templates; text/type/style/layout filters; selectable preview and desktop/mobile iframe; color swatches and contrast readout; export HTML, individual JSON, full JSON, and downloadable ZIP; reuse existing Prompt Studio.
+- Source: src/lib/creativeWebsiteTemplateLibrary.js and src/lib/creativeWebsiteTemplateExporter.js; archive generator scripts/buildCreativeTemplatePack.mjs.
+- Artifact: public/template-packs/X1-100-Website-Templates-v2.zip (100 standalone HTML sample designs + JSON manifest + README); JSON at public/template-packs/X1-100-Website-Templates-v2.json.
+- Benchmark inspirations: Webflow most-liked ecommerce, Framer agency/ecommerce marketplace, Shopify conversion-oriented catalog features. Original markup and CSS; not copied from commercial templates.
+- Deterministic tests: 9/9 PASS; 100 unique IDs; 100 unique palette combinations; tested primary text and CTA contrast >=4.5:1; lint exit 0; Vite production build exit 0; ZIP archive passes integrity and includes 100 HTML pages.
+- Existing autopost scheduler, AI gateway, Supabase, social accounts, Drive permissions and production deployment unchanged.
+- OPEN: independent Guardian QA, authenticated gallery browser tests, real mobile checks, user-specific brand/media rights, conversion validation, functional ecommerce/booking services, production release approval.
+- Full specs: docs/marketing/X1_100_WEBSITE_TEMPLATES_v2_HANDOFF.md. Pre-change restore checkpoint 6adad318d381bd0e7366c095, SHA 75d2c820ed50352a50e5c382966d7558d2b4b400.
+
