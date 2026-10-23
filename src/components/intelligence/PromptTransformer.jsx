@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,8 +13,9 @@ const EXAMPLES = [
   'Why most people replace their water heater too early.',
 ];
 
-export default function PromptTransformer({ business }) {
-  const [sentence, setSentence] = useState('');
+export default function PromptTransformer({ business, initialSentence = '' }) {
+  const [sentence, setSentence] = useState(initialSentence);
+  useEffect(() => { if (initialSentence) setSentence(initialSentence); }, [initialSentence]);
   const [platforms, setPlatforms] = useState(['instagram', 'facebook', 'linkedin']);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
