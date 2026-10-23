@@ -17,6 +17,7 @@ import Studio from '@/pages/Studio';
 import Calendar from '@/pages/Calendar';
 import ApprovalQueue from '@/pages/ApprovalQueue';
 import SocialAccounts from '@/pages/SocialAccounts';
+import AccessMap from '@/pages/AccessMap';
 import Dashboard from '@/pages/Dashboard';
 import Analytics from '@/pages/Analytics';
 import Assistant from '@/pages/Assistant';
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/approval-queue" element={<ApprovalQueue />} />
         <Route path="/social-accounts" element={<SocialAccounts />} />
+        <Route path="/access-map" element={<AccessMap />} />
         <Route path="/profile-makeover" element={<ProfileMakeover />} />
         <Route path="/text-alerts" element={<TextAlerts />} />
         <Route path="/video-studio" element={<VideoStudio />} />

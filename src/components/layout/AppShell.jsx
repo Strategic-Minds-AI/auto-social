@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp, Images, Radar, Workflow, Hash, Palette, Library } from 'lucide-react';
+import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp, Images, Radar, Workflow, Hash, Palette, Library, Plug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
 import PromptEnhancer from '@/components/enhance/PromptEnhancer';
@@ -25,6 +25,7 @@ const navItems = [
   { label: 'Calendar', path: '/calendar', icon: CalendarDays },
   { label: 'Approval Queue', path: '/approval-queue', icon: ListChecks },
   { label: 'Social Accounts', path: '/social-accounts', icon: Share2 },
+  { label: 'Access Map', path: '/access-map', icon: Plug },
   { label: 'Profile Makeover', path: '/profile-makeover', icon: Palette },
   { label: 'Auto Social', path: '/auto-social', icon: CalendarClock },
   { label: 'Content Library', path: '/content', icon: FileText },
