@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { generateJsonWithMeta } from '../../shared/aiClient.ts';
+import { groundingBlock } from '../../shared/discovery.ts';
 
 const PLATFORMS = ['instagram', 'facebook', 'linkedin', 'x', 'tiktok', 'youtube'];
 const FORMATS = ['post', 'story', 'reel', 'short_video', 'image'];
@@ -45,9 +46,11 @@ Brand tone: ${business.tone || 'professional'}
 Website: ${business.website || 'not specified'}`;
 }
 
-function buildPrompt({ mode, business, platform, format, tone, count, brief, existingText }) {
+function buildPrompt({ mode, business, platform, format, tone, count, brief, existingText, discovery }) {
   const voice = tone ? `Tone override: ${tone}` : `Tone: ${business.tone || 'professional'}`;
-  const settings = `PLATFORM: ${platform}\nFORMAT: ${format}\n${voice}\nAudience: ${business.target_audience || 'the business audience'}`;
+  // The discovery plan rides along with every mode: the tags proven for this business
+  // and the patterns measured to win in its category.
+  const settings = `PLATFORM: ${platform}\nFORMAT: ${format}\n${voice}\nAudience: ${business.target_audience || 'the business audience'}${discovery ? `\n\n${discovery}` : ''}`;
 
   if (mode === 'rewrite') {
     return `You are the senior content writer inside Auto Social.
@@ -124,8 +127,16 @@ export default async function (req) {
     const business = await base44.entities.Business.get(businessId).catch(() => null);
     if (!business) return Response.json({ error: 'That business is not available to you.' }, { status: 403 });
 
+    // What the discovery scan proved for this business. Both reads are optional —
+    // with nothing on file, generation behaves exactly as it did before.
+    const [seoPage, rulePage] = await Promise.all([
+      base44.entities.SeoProfile.filter({ business_id: business.id }, { limit: 1 }).catch(() => ({ items: [] })),
+      base44.entities.BenchmarkRule.filter({ business_id: business.id, active: true }, { sort: '-priority', limit: 6 }).catch(() => ({ items: [] })),
+    ]);
+    const discovery = groundingBlock((seoPage.items || [])[0] || null, rulePage.items || [], platform);
+
     const { data, meta } = await generateJsonWithMeta(base44, {
-      prompt: buildPrompt({ mode, business, platform, format, tone: body.tone, count, brief, existingText }),
+      prompt: buildPrompt({ mode, business, platform, format, tone: body.tone, count, brief, existingText, discovery }),
       schema: PIECE_SCHEMA,
       maxTokens: 4000,
       temperature: mode === 'create' ? 0.85 : 0.7

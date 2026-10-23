@@ -1,0 +1,189 @@
+{
+  "name": "SeoProfile",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this plan was built for"
+    },
+    "website_url": {
+      "type": "string",
+      "description": "Website the keywords and tags were read from"
+    },
+    "site_title": {
+      "type": "string",
+      "description": "Title of the live website as it was read"
+    },
+    "site_summary": {
+      "type": "string",
+      "description": "What the live website actually says, in plain language"
+    },
+    "website_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the website was actually retrieved during the scan"
+    },
+    "website_note": {
+      "type": "string",
+      "description": "Plain-language note on what the website fetch did"
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Search phrases real buyers type, with the intent behind each one",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "informational",
+              "commercial",
+              "local",
+              "navigational"
+            ]
+          },
+          "priority": {
+            "type": "number"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "term"
+        ]
+      }
+    },
+    "hashtags": {
+      "type": "array",
+      "description": "The tag ladder: broad, niche, local, brand and partner tags",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "broad",
+              "niche",
+              "local",
+              "brand",
+              "partner"
+            ]
+          },
+          "platform": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag"
+        ]
+      }
+    },
+    "tag_plan": {
+      "type": "array",
+      "description": "How to tag a post, and which tags belong on which platform",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "own_brand",
+              "hashtag",
+              "location",
+              "partner",
+              "collab"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "guidance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "guidance"
+        ]
+      }
+    },
+    "meta_suggestions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Page title and meta description ideas for the website itself"
+    },
+    "search_notes": {
+      "type": "string",
+      "description": "What the engine noticed about how this business gets found"
+    },
+    "platform": {
+      "type": "string",
+      "description": "Platform the hashtag set was shaped for, when one was chosen"
+    },
+    "engine": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

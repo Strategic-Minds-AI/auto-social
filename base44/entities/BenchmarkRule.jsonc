@@ -1,0 +1,125 @@
+{
+  "name": "BenchmarkRule",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Reference to the Business this playbook belongs to"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Category the winning content was read in"
+    },
+    "label": {
+      "type": "string",
+      "description": "Short name of the technique, e.g. Step-by-step promise"
+    },
+    "technique": {
+      "type": "string",
+      "description": "What the top performers actually do, written as steps the app can follow"
+    },
+    "hook_pattern": {
+      "type": "string",
+      "description": "Reusable opening formula taken from a winning piece"
+    },
+    "format": {
+      "type": "string",
+      "description": "Shape of the winning content: length, pacing, overlays, audio"
+    },
+    "why_it_works": {
+      "type": "string",
+      "description": "The psychology or platform reason this pattern performs"
+    },
+    "evidence": {
+      "type": "array",
+      "description": "The real, measured pieces this rule was distilled from",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "priority": {
+      "type": "number",
+      "default": 50,
+      "description": "0 to 100, how strongly this pattern should steer generation"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this pattern is handed to content generation"
+    },
+    "used_count": {
+      "type": "number",
+      "default": 0,
+      "description": "How many generations have been given this pattern"
+    },
+    "engine": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "label",
+    "technique"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

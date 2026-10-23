@@ -27,6 +27,7 @@ import Intelligence from '@/pages/Intelligence';
 import VideoStudio from '@/pages/VideoStudio';
 import MediaLibrary from '@/pages/MediaLibrary';
 import DemandRadar from '@/pages/DemandRadar';
+import Discovery from '@/pages/Discovery';
 import Pipeline from '@/pages/Pipeline';
 
 const AuthenticatedApp = () => {
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
         <Route path="/leads" element={<Leads />} />
         <Route path="/intelligence" element={<Intelligence />} />
         <Route path="/demand-radar" element={<DemandRadar />} />
+        <Route path="/discovery" element={<Discovery />} />
         <Route path="/pipeline" element={<Pipeline />} />
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/businesses" element={<Businesses />} />

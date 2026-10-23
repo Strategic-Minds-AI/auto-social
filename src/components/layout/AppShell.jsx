@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp, Images, Radar, Workflow } from 'lucide-react';
+import { Building2, Megaphone, FileText, CalendarClock, Menu, X, Sparkles, CalendarDays, ListChecks, Share2, LayoutDashboard, Bot, MessageSquare, Inbox, Film, Brain, TrendingUp, Images, Radar, Workflow, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import BusinessSwitcher from './BusinessSwitcher';
 import PromptEnhancer from '@/components/enhance/PromptEnhancer';
@@ -14,6 +14,7 @@ const navItems = [
   { label: 'Analytics', path: '/analytics', icon: TrendingUp },
   { label: 'Intelligence', path: '/intelligence', icon: Brain },
   { label: 'Demand Radar', path: '/demand-radar', icon: Radar },
+  { label: 'SEO & Discovery', path: '/discovery', icon: Hash },
   { label: 'Leads', path: '/leads', icon: Inbox },
   { label: 'Businesses', path: '/businesses', icon: Building2 },
   { label: 'Campaigns', path: '/campaigns', icon: Megaphone },
