@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { generateJson, aiProviderHost } from '../../shared/aiClient.ts';
+import { libraryBlock } from '../../shared/library.ts';
 
 const ALLOWED_PLATFORMS = ['instagram', 'facebook', 'linkedin', 'x'];
 const ALLOWED_FORMATS = ['post', 'story', 'reel', 'image'];
@@ -21,7 +22,7 @@ function weekStartFor(dateStr) {
   return addDays(dateStr, (8 - day) % 7);
 }
 
-function buildPrompt(business, days, totalPosts, platforms, discovery, topics) {
+function buildPrompt(business, days, totalPosts, platforms, discovery, topics, library) {
   const research = discovery
     ? `MARKET RESEARCH (already completed for this business)
 Positioning: ${discovery.positioning || 'not specified'}
@@ -52,6 +53,7 @@ Website: ${business.website || 'not specified'}
 ${research}
 
 ${topicList}
+${library ? `\n\n${library}` : ''}
 
 REQUIREMENTS
 - Produce exactly ${totalPosts} posts spread across the ${days} day window using day_offset 0 to ${days - 1}. At most 3 posts may share the same day_offset.
@@ -182,11 +184,31 @@ export default async function (req) {
         .then((page) => page.items || [])
         .catch(() => []);
 
+      // What the owner keeps as proven: hooks, scripts, and the visual or editing
+      // methods behind them. With nothing saved, planning is unchanged.
+      const [hookPage, scriptPage, recipePage] = await Promise.all([
+        base44.entities.LibraryItem
+          .filter({ business_id: business.id, kind: 'hook' }, { sort: '-score', limit: 5 })
+          .catch(() => ({ items: [] })),
+        base44.entities.LibraryItem
+          .filter({ business_id: business.id, kind: 'script' }, { sort: '-score', limit: 4 })
+          .catch(() => ({ items: [] })),
+        base44.entities.LibraryItem
+          .filter({ business_id: business.id, kind: { $in: ['editing_recipe', 'visual_template'] } }, { sort: '-score', limit: 5 })
+          .catch(() => ({ items: [] })),
+      ]);
+      const savedPatterns = [...(hookPage.items || []), ...(scriptPage.items || []), ...(recipePage.items || [])];
+      const library = libraryBlock({
+        hooks: hookPage.items || [],
+        scripts: scriptPage.items || [],
+        recipes: recipePage.items || [],
+      });
+
       const chosen = Array.isArray(business.primary_platforms) ? business.primary_platforms : [];
       const businessPlatforms = requested.length ? requested : (chosen.length ? chosen : platforms);
 
       const plan = await generateJson(base44, {
-        prompt: buildPrompt(business, days, totalPosts, businessPlatforms, discovery, trendTopics),
+        prompt: buildPrompt(business, days, totalPosts, businessPlatforms, discovery, trendTopics, library),
         schema: PLAN_SCHEMA
       });
 
@@ -224,6 +246,14 @@ export default async function (req) {
       if (records.length) {
         await base44.entities.ScheduledPost.bulkCreate(records);
         created += records.length;
+
+        // The patterns handed to the planner are credited, so the library shows
+        // which ones actually earn their place.
+        if (savedPatterns.length) {
+          await base44.entities.LibraryItem
+            .bulkUpdate(savedPatterns.map((item) => ({ id: item.id, times_used: (Number(item.times_used) || 0) + 1 })))
+            .catch(() => {});
+        }
 
         // Record which researched topics this plan actually used, so the topic
         // list stays a live picture of what is still uncovered.

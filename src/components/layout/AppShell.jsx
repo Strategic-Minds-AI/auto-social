@@ -29,7 +29,7 @@ const navItems = [
   { label: 'Growth Playbook', path: '/playbook', icon: BookOpen },
   { label: 'Profile Makeover', path: '/profile-makeover', icon: Palette },
   { label: 'Auto Social', path: '/auto-social', icon: CalendarClock },
-  { label: 'Content Library', path: '/content', icon: FileText },
+  { label: 'Content Pieces', path: '/content', icon: FileText },
   { label: 'Eden Skye', path: '/assistant', icon: Bot },
   { label: 'Text Alerts', path: '/text-alerts', icon: MessageSquare },
 ];

@@ -43,7 +43,7 @@ export default function Content() {
     <div className="p-6 lg:p-10 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-space text-3xl font-bold">Content Library</h1>
+          <h1 className="font-space text-3xl font-bold">Content Pieces</h1>
           {activeBusiness && <p className="text-muted-foreground mt-1">All content for <span className="text-primary font-medium">{activeBusiness.name}</span></p>}
         </div>
         <Button onClick={() => navigate('/campaigns')} variant="outline" className="gap-2 border-primary/40 text-primary hover:bg-primary/10">
