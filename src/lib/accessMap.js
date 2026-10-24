@@ -28,23 +28,38 @@ export const CONNECTED = [
     detail:
       'Projects, database, storage, edge functions and secrets can be read and written — this is what the database and automation work runs on.',
   },
-];
-
-export const AVAILABLE = [
   {
-    name: 'Google Analytics',
+    name: 'TikTok',
     detail:
-      'Traffic, behaviour and campaign performance, so reporting is grounded in real numbers instead of guesses.',
-  },
-  {
-    name: 'Google Search Console',
-    detail:
-      'Search performance, sitemaps and indexing status for your sites, which sharpens the SEO and Discovery work.',
+      'Your profile, followers and videos can be read, and a finished video can be sent to your TikTok inbox as a draft you finish and post with one tap. Direct posting stays private until TikTok audits the app, so nothing reaches TikTok unattended.',
   },
   {
     name: 'X',
     detail:
-      'Posting and search. Metered: every single call spends integration credits, so it is used deliberately rather than in loops, and no bulk or repeated automated posting is allowed.',
+      'Posts and images can be published to the connected account, and your own posts read back. Metered: every call spends integration credits, so it is used deliberately and never in loops or bulk.',
+  },
+  {
+    name: 'Google Analytics',
+    detail:
+      'Traffic, behaviour and campaign performance can be read, so reporting is grounded in real numbers instead of guesses. Read-only.',
+  },
+  {
+    name: 'Google Search Console',
+    detail:
+      'Search performance, sitemaps and indexing status can be read for your sites, which sharpens the SEO and Discovery work. Read-only.',
+  },
+];
+
+export const AVAILABLE = [
+  {
+    name: 'HubSpot',
+    detail:
+      'A workspace connection is already registered, so leads, contacts and deals can be kept in step with the app once you consent to it.',
+  },
+  {
+    name: 'Google Contacts',
+    detail:
+      'A workspace connection is already registered, so enquiries filed as leads can become contacts on your own account once you consent to it.',
   },
 ];
 
@@ -106,11 +121,11 @@ export const BLOCKED = [
       'Both have REST APIs: a personal token stored as a secret lets the app trigger deploys and read project status.',
   },
   {
-    want: 'Publishing to TikTok, and mass following, commenting or group posting',
+    want: 'Publishing to TikTok directly, and mass following, commenting or group posting',
     why:
-      'TikTok posting is not available through this connection, and bulk engagement is banned on every platform — it is the fastest way to lose the accounts.',
+      'TikTok only allows an app to post directly in private mode until the app itself is audited and approved, and bulk engagement is banned on every platform — it is the fastest way to lose the accounts.',
     workaround:
-      'Keep TikTok and similar networks for research, and let the automations work your own feed, your own Pages and your own messages.',
+      'Finished videos are sent to your TikTok inbox as drafts for a one-tap finish, and the automations work your own feed, your own Pages and your own messages.',
   },
 ];
 
