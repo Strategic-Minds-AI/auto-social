@@ -119,3 +119,54 @@ export const RULES = [
   'Publishing is a pipeline. Nothing leaves the Approval Queue without your approval, and every attempt is logged.',
   'Metered services and AI generations spend integration credits. AI generation already runs through your own keys.',
 ];
+
+export const CEILING = [
+  {
+    group: 'Content engine',
+    items: [
+      'Plan a month of posts from live demand and your own measured winners',
+      'Write, illustrate and film from your own AI keys instead of platform credits',
+      'Distil any winning format into a reusable template and a timed edit sheet',
+    ],
+  },
+  {
+    group: 'Publishing',
+    items: [
+      'Facebook Pages (all of them), Instagram Reels, LinkedIn and X',
+      'TikTok drafts sent to the creator inbox for a one-tap finish',
+      'Scheduled, approved, logged and retried, with duplicate protection',
+    ],
+  },
+  {
+    group: 'Intelligence',
+    items: [
+      'Demand Radar reading free public sources, so it costs nothing to run',
+      'SEO, keyword and hashtag profiles read from your own website',
+      'Benchmark playbooks distilled from measured winners, plus variant simulation before you commit',
+    ],
+  },
+  {
+    group: 'Sales and clients',
+    items: [
+      'Enquiries from Gmail filed as leads, with SMS alerts and approval by reply',
+      'HubSpot, Google Contacts and Sheets kept in step',
+      'Payments for client work, so the agency side bills inside the same system',
+    ],
+  },
+  {
+    group: 'Infrastructure',
+    items: [
+      'Supabase database, storage, edge functions and secrets',
+      'GitHub repositories, and Railway or Vercel deploys through personal tokens',
+      'This app has its own API and MCP server, so ChatGPT or Claude can drive it',
+    ],
+  },
+  {
+    group: 'The agency ceiling',
+    items: [
+      'Every client connects their own accounts, so one app serves all of them',
+      'Unlimited faceless identities from Brand Kits',
+      'Reporting per client built from real platform numbers, not estimates',
+    ],
+  },
+];

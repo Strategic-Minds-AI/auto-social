@@ -1,23 +1,10 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Plug, ShieldCheck, KeyRound } from 'lucide-react';
-import { CONNECTED, AVAILABLE, BLOCKED, RULES } from '@/lib/accessMap';
+import { CheckCircle2, Plug, ShieldCheck, KeyRound, Layers } from 'lucide-react';
+import { CONNECTED, AVAILABLE, BLOCKED, CEILING, RULES } from '@/lib/accessMap';
 import StatusRow from '@/components/accessmap/StatusRow';
 import BlockedRow from '@/components/accessmap/BlockedRow';
+import PageSection from '@/components/common/PageSection';
 import { Button } from '@/components/ui/button';
-
-function Section({ icon: Icon, title, subtitle, children }) {
-  return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="font-space font-semibold text-lg flex items-center gap-2">
-          <Icon className="w-5 h-5 text-primary" /> {title}
-        </h2>
-        {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 export default function AccessMap() {
   return (
@@ -27,16 +14,12 @@ export default function AccessMap() {
           <KeyRound className="w-6 h-6 text-primary" /> Access Map
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Everything this app can reach, everything that needs one approval, and everything no app is
-          allowed to do — with what to do instead. Ask for any of the middle list and it gets connected.
+          Everything this app can reach now, everything one approval away, everything no app is allowed
+          to do — and the ceiling it can be built out to.
         </p>
       </div>
 
-      <Section
-        icon={CheckCircle2}
-        title="Connected now"
-        subtitle="Live on your account today."
-      >
+      <PageSection icon={CheckCircle2} title="Connected now" subtitle="Live on your account today.">
         <div className="space-y-2">
           {CONNECTED.map((item) => (
             <StatusRow key={item.name} {...item} state="connected" />
@@ -50,9 +33,9 @@ export default function AccessMap() {
             <Button variant="outline" size="sm">Open Profile Makeover</Button>
           </Link>
         </div>
-      </Section>
+      </PageSection>
 
-      <Section
+      <PageSection
         icon={Plug}
         title="One approval away"
         subtitle="Not connected yet — each one shows a consent prompt when you ask for it."
@@ -62,29 +45,54 @@ export default function AccessMap() {
             <StatusRow key={item.name} {...item} state="available" />
           ))}
         </div>
-      </Section>
+      </PageSection>
 
-      <Section
+      <PageSection
+        icon={Layers}
+        title="The ceiling"
+        subtitle="Everything this app can be built out to, using the connections above."
+      >
+        <div className="grid sm:grid-cols-2 gap-3">
+          {CEILING.map((group) => (
+            <div key={group.group} className="bg-card border border-border rounded-xl p-4">
+              <p className="text-sm font-medium mb-2">{group.group}</p>
+              <ul className="space-y-1.5">
+                {group.items.map((line) => (
+                  <li key={line} className="text-xs text-muted-foreground leading-relaxed flex gap-2">
+                    <span className="text-primary">•</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </PageSection>
+
+      <PageSection
         icon={ShieldCheck}
         title="Not possible — and what to do instead"
-        subtitle="These are the walls worth knowing before you plan around them."
+        subtitle="The walls worth knowing before you plan around them."
       >
         <div className="space-y-2">
           {BLOCKED.map((item) => (
             <BlockedRow key={item.want} {...item} />
           ))}
         </div>
-      </Section>
+      </PageSection>
 
-      <Section icon={ShieldCheck} title="The three rules behind all of it">
+      <PageSection icon={ShieldCheck} title="The three rules behind all of it">
         <ul className="space-y-2">
           {RULES.map((rule) => (
-            <li key={rule} className="text-sm text-muted-foreground bg-surface-2 border border-border rounded-lg p-3 leading-relaxed">
+            <li
+              key={rule}
+              className="text-sm text-muted-foreground bg-surface-2 border border-border rounded-lg p-3 leading-relaxed"
+            >
               {rule}
             </li>
           ))}
         </ul>
-      </Section>
+      </PageSection>
     </div>
   );
 }
