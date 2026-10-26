@@ -1,4 +1,5 @@
 import { secrets } from "base44:runtime";
+import { checkAiBudget } from './access.ts';
 
 // One OpenAI-compatible call serves every provider behind the gateway (Groq,
 // Ollama, vLLM, OpenRouter). The caller's own account pays, never Base44 credits.
@@ -81,8 +82,21 @@ async function postChat(config, body) {
  * Structured generation against the configured gateway.
  * Returns { data, meta } so callers can report the engine, model and token usage.
  */
-export async function generateJsonWithMeta(_base44, { prompt, schema, maxTokens, system, temperature = 0.8 }) {
+export async function generateJsonWithMeta(base44, { prompt, schema, maxTokens, system, temperature = 0.8 }) {
   const config = aiConfig();
+
+  // One choke point for the daily AI budget: every call in the app passes through
+  // here, so no generator can spend past the cap even if it forgets to check. The
+  // ledger is per user; without a user context the guard steps aside.
+  const user = await base44.auth.me().catch(() => null);
+  if (user) {
+    const budget = await checkAiBudget(base44, user);
+    if (!budget.ok) {
+      const blocked = new Error(budget.message);
+      blocked.code = 'ai_budget_reached';
+      throw blocked;
+    }
+  }
 
   // Fail closed: never silently consume Base44 AI integration credits.
   if (!config.configured) {

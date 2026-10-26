@@ -1,0 +1,131 @@
+{
+  "name": "SystemIssue",
+  "type": "object",
+  "properties": {
+    "owner_id": {
+      "type": "string",
+      "description": "App user who owns the affected business; set server-side so the owner can read their own issues"
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Business the issue belongs to, when it belongs to one"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "stuck_publish",
+        "failed_publish",
+        "missing_due_date",
+        "due_not_scheduled",
+        "overdue_unapproved",
+        "video_stuck",
+        "account_reauth",
+        "integration_down",
+        "ai_budget",
+        "publish_flush"
+      ],
+      "description": "What kind of problem was found"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "warning",
+        "info"
+      ],
+      "default": "warning"
+    },
+    "title": {
+      "type": "string",
+      "description": "One line saying what was found"
+    },
+    "detail": {
+      "type": "string",
+      "description": "What actually happened, in plain language"
+    },
+    "fix": {
+      "type": "string",
+      "description": "What the system did about it, or the one thing a person has to do"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "auto_fixed",
+        "needs_you",
+        "open",
+        "resolved"
+      ],
+      "default": "open",
+      "description": "auto_fixed: repaired without help. needs_you: a person must act. open: watched, no action yet. resolved: no longer detected"
+    },
+    "entity_name": {
+      "type": "string"
+    },
+    "record_id": {
+      "type": "string",
+      "description": "The record the issue was found on"
+    },
+    "dedupe_key": {
+      "type": "string",
+      "description": "Stable key so the same problem is one row that accumulates, never a new row per sweep"
+    },
+    "occurrences": {
+      "type": "number",
+      "default": 1
+    },
+    "first_seen_at": {
+      "type": "string"
+    },
+    "last_seen_at": {
+      "type": "string"
+    },
+    "resolved_at": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "watchdog",
+        "manual"
+      ],
+      "default": "watchdog"
+    }
+  },
+  "required": [
+    "kind",
+    "title",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

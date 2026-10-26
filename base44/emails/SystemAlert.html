@@ -1,0 +1,70 @@
+<mjml>
+  <mj-head>
+    <mj-title>System health: {{needs_you_count}} item(s) need you</mj-title>
+    <mj-preview>What the watchdog repaired on its own, and what is waiting on you.</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="'Space Grotesk', Inter, Helvetica, Arial, sans-serif" />
+      <mj-section background-color="#05070a" padding="0 36px" />
+      <mj-text color="#ecf0f4" font-size="15px" line-height="1.6" padding="0" />
+      <mj-button background-color="#00aaff" color="#05070a" border-radius="12px" font-weight="700" inner-padding="14px 28px" align="left" />
+      <mj-class name="h" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" />
+      <mj-class name="muted" color="#9fadbc" />
+      <mj-class name="stat" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" font-size="28px" color="#00aaff" padding="0" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#05070a">
+    <mj-section background-color="#00aaff" padding="18px 36px">
+      <mj-column>
+        <mj-image src="https://media.base44.com/images/public/69fdaf4ac8adeb7285e689af/075a2ad58_logo.png" width="44px" align="left" alt="AUTO SOCIAL" />
+        <mj-text color="#05070a" font-weight="700" font-size="16px" padding="8px 0 0">AUTO SOCIAL</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="38px 36px 10px">
+      <mj-column>
+        <mj-text mj-class="h" font-size="30px" line-height="1.15" padding="0 0 10px">System health report</mj-text>
+        <mj-text mj-class="muted" font-size="15px">The watchdog swept your system at {{ran_at}} and handled {{health}}% of what it found without you.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="22px 36px 6px">
+      <mj-group>
+        <mj-column>
+          <mj-text mj-class="stat">{{fixed_count}}</mj-text>
+          <mj-text mj-class="muted" font-size="13px" padding="4px 0 0">repaired automatically</mj-text>
+        </mj-column>
+        <mj-column>
+          <mj-text mj-class="stat" color="#ecf0f4">{{needs_you_count}}</mj-text>
+          <mj-text mj-class="muted" font-size="13px" padding="4px 0 0">need a person</mj-text>
+        </mj-column>
+      </mj-group>
+    </mj-section>
+
+    <mj-section padding="24px 36px 0">
+      <mj-column>
+        <mj-text mj-class="h" font-size="16px" padding="0 0 8px">Repaired on this sweep</mj-text>
+        <mj-text mj-class="muted" font-size="14px">{{repaired}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="24px 36px 0">
+      <mj-column>
+        <mj-text mj-class="h" font-size="16px" padding="0 0 8px">Waiting on you</mj-text>
+        <mj-text mj-class="muted" font-size="14px">{{attention}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="30px 36px 40px">
+      <mj-column>
+        <mj-button href="https://auto-social.base44.app/system-health">Open the health board</mj-button>
+      </mj-column>
+    </mj-section>
+
+    <mj-divider border-color="#e5e7eb" padding="0 36px" />
+    <mj-section padding="22px 36px 40px">
+      <mj-column>
+        <mj-text mj-class="muted" font-size="12px">You receive this because a self-healing sweep found something that needs your attention on your own AUTO SOCIAL account. Once nothing needs you, this email stops arriving.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

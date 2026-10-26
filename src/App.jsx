@@ -33,6 +33,7 @@ import Discovery from '@/pages/Discovery';
 import Pipeline from '@/pages/Pipeline';
 import ProfileMakeover from '@/pages/ProfileMakeover';
 import Library from '@/pages/Library';
+import SystemHealth from '@/pages/SystemHealth';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
         <Route path="/demand-radar" element={<DemandRadar />} />
         <Route path="/discovery" element={<Discovery />} />
         <Route path="/pipeline" element={<Pipeline />} />
+        <Route path="/system-health" element={<SystemHealth />} />
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/businesses" element={<Businesses />} />
         <Route path="/businesses/new" element={<BusinessForm />} />

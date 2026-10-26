@@ -1,6 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import { generateJson, aiProviderHost } from '../../shared/aiClient.ts';
+import { generateJsonWithMeta, aiProviderHost } from '../../shared/aiClient.ts';
 import { libraryBlock } from '../../shared/library.ts';
+import { checkAiBudget, recordAiUsage } from '../../shared/access.ts';
+import { zonedToUtcIso, isValidTimeZone, DEFAULT_TIMEZONE } from '../../shared/time.ts';
 
 const ALLOWED_PLATFORMS = ['instagram', 'facebook', 'linkedin', 'x'];
 const ALLOWED_FORMATS = ['post', 'story', 'reel', 'image'];
@@ -135,6 +137,11 @@ export default async function (req) {
       return Response.json({ error: 'Add a business profile first, then generate its plan.' }, { status: 400 });
     }
 
+    // The weekly planner used to generate without touching the daily ledger, which
+    // is how the budget cap was bypassed. It now checks and records like every other caller.
+    const budget = await checkAiBudget(base44, user);
+    if (!budget.ok) return Response.json({ error: budget.message }, { status: budget.status });
+
     let created = 0;
     const skipped = [];
     const strategy = [];
@@ -207,10 +214,11 @@ export default async function (req) {
       const chosen = Array.isArray(business.primary_platforms) ? business.primary_platforms : [];
       const businessPlatforms = requested.length ? requested : (chosen.length ? chosen : platforms);
 
-      const plan = await generateJson(base44, {
+      const { data: plan, meta } = await generateJsonWithMeta(base44, {
         prompt: buildPrompt(business, days, totalPosts, businessPlatforms, discovery, trendTopics, library),
         schema: PLAN_SCHEMA
       });
+      await recordAiUsage(base44, user, meta);
 
       const planned = Array.isArray(plan?.posts) ? plan.posts : [];
       if (plan?.strategy) strategy.push(`${business.name}: ${plan.strategy}`);
@@ -221,12 +229,19 @@ export default async function (req) {
           const offset = Math.min(Math.max(Number(p.day_offset) || 0, 0), days - 1);
           const format = ALLOWED_FORMATS.includes(p.format) ? p.format : 'post';
           const platform = ALLOWED_PLATFORMS.includes(p.platform) ? p.platform : businessPlatforms[0];
+          // The UTC instant is written at creation time. Without it a post has no slot
+          // the publisher can fire on, which is how planned posts used to sit forever.
+          const zone = isValidTimeZone(body.timezone) ? body.timezone : DEFAULT_TIMEZONE;
+          const day = addDays(startDate, offset);
+          const time = /^\d{1,2}:\d{2}$/.test(String(p.scheduled_time || '')) ? p.scheduled_time : '09:00';
           return {
             business_id: business.id,
             platform,
             format,
-            scheduled_date: addDays(startDate, offset),
-            scheduled_time: p.scheduled_time || '09:00',
+            scheduled_date: day,
+            scheduled_time: time,
+            timezone: zone,
+            scheduled_at: zonedToUtcIso(day, time, zone),
             pillar: p.pillar || '',
             trend_topic: p.topic || '',
             title: p.title || '',

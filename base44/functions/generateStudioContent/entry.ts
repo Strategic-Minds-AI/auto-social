@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { generateJsonWithMeta } from '../../shared/aiClient.ts';
 import { groundingBlock } from '../../shared/discovery.ts';
 import { libraryBlock } from '../../shared/library.ts';
+import { checkAiBudget, recordAiUsage } from '../../shared/access.ts';
 
 const PLATFORMS = ['instagram', 'facebook', 'linkedin', 'x', 'tiktok', 'youtube'];
 const FORMATS = ['post', 'story', 'reel', 'short_video', 'image'];
@@ -129,6 +130,11 @@ export default async function (req) {
     const business = await base44.entities.Business.get(businessId).catch(() => null);
     if (!business) return Response.json({ error: 'That business is not available to you.' }, { status: 403 });
 
+    // Content Studio used to generate without touching the daily ledger, which is
+    // how the budget cap was bypassed. It now checks and records like every other caller.
+    const budget = await checkAiBudget(base44, user);
+    if (!budget.ok) return Response.json({ error: budget.message }, { status: budget.status });
+
     // What the discovery scan proved for this business. Both reads are optional —
     // with nothing on file, generation behaves exactly as it did before.
     const [seoPage, rulePage] = await Promise.all([
@@ -158,6 +164,8 @@ export default async function (req) {
       maxTokens: 4000,
       temperature: mode === 'create' ? 0.85 : 0.7
     });
+
+    await recordAiUsage(base44, user, meta);
 
     const pieces = (Array.isArray(data?.pieces) ? data.pieces : []).filter((p) => p && String(p.caption || '').trim());
     if (!pieces.length) return Response.json({ error: 'The AI returned no usable content. Try again.' }, { status: 502 });

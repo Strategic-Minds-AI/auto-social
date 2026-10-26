@@ -1,0 +1,83 @@
+{
+  "name": "System Watchdog",
+  "description": "Self-healing sweep every 15 minutes. Detects stalled publishing, unreachable connections, stuck video jobs, missing publish times and budget exhaustion, repairs everything it can on its own, hands due work to the publisher, and emails a digest when something genuinely needs a person.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/15 * * * *",
+      "timezone": "America/New_York",
+      "one_time_date": null,
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "system_watchdog",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sweep": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "systemWatchdog",
+            "args": {}
+          },
+          "then": "check_alerts",
+          "x-base44": {
+            "title": "Self-healing sweep",
+            "description": "Detect and repair"
+          }
+        }
+      },
+      {
+        "check_alerts": {
+          "switch": [
+            {
+              "when": "${ .sweep.alert_count > 0 }",
+              "then": "email_digest"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ]
+        }
+      },
+      {
+        "email_digest": {
+          "call": "send_email",
+          "with": {
+            "template_name": "SystemAlert",
+            "to": "${ .sweep.recipient }",
+            "category": "transactional",
+            "description": "Reports what the watchdog repaired and what is waiting on you",
+            "variables": {
+              "health": "${ .sweep.health }",
+              "fixed_count": "${ .sweep.auto_fixed }",
+              "needs_you_count": "${ .sweep.needs_you }",
+              "repaired": "${ .sweep.repaired }",
+              "attention": "${ .sweep.attention }",
+              "ran_at": "${ .sweep.ran_at_label }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Email the digest",
+            "description": "What needs you"
+          }
+        }
+      }
+    ]
+  }
+}
