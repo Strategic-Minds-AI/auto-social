@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import OpenAI from 'npm:openai@6.45.0';
 import { generateJsonWithMeta } from '../../shared/aiClient.ts';
+import { readMediaVideo } from '../../shared/mediaClient.ts';
 import { checkAiBudget, recordAiUsage, resolveBusiness } from '../../shared/access.ts';
 import {
   BENCHMARK_CRITERIA,
@@ -20,7 +20,7 @@ const PENDING_STATUSES = ['generating', 'scoring'];
 const MAX_COLLECT_PER_RUN = 6;
 const MAX_SCORED_PER_RUN = 3;
 const DELIVERY_TIMEOUT_MS = 15000;
-const UNFINISHED = ['queued', 'in_progress', 'processing'];
+const UNFINISHED = ['queued', 'in_progress', 'processing', 'running'];
 
 async function checkDelivery(url) {
   try {
@@ -96,16 +96,13 @@ export default async function (req) {
     const jobs = jobPage.items || [];
     if (!jobs.length) return Response.json({ considered: 0, stored: 0, still_rendering: 0, passed: 0, flagged: 0, failed: 0 });
 
-    const { baseURL, token, headers } = base44.asServiceRole.aiGateway.connection();
-    const videos = new OpenAI({ baseURL, apiKey: token, defaultHeaders: headers }).videos;
-
     const summary = { considered: jobs.length, stored: 0, still_rendering: 0, passed: 0, flagged: 0, failed: 0, errors: [] };
     let scored = 0;
 
     for (const job of jobs) {
       let engineVideo = null;
       try {
-        engineVideo = await videos.retrieve(job.gateway_video_id);
+        engineVideo = await readMediaVideo(job.gateway_video_id);
       } catch (error) {
         summary.errors.push(`retrieve: ${String(error?.message || error).slice(0, 160)}`);
         continue;

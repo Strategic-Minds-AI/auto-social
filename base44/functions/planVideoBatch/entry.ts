@@ -1,11 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import OpenAI from 'npm:openai@6.45.0';
 import { resolveBusiness } from '../../shared/access.ts';
+import { submitMediaVideo, mediaVideoModel } from '../../shared/mediaClient.ts';
 import {
-  RESOLUTION,
   aspectRatioFor,
   secondsFor,
-  modelFor,
   buildVideoPrompt,
   sourceHash,
 } from '../../shared/videoFactory.ts';
@@ -30,26 +28,6 @@ function addDays(dateString, days) {
   const date = new Date(`${dateString}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return toDateString(date);
-}
-
-function videoRequest(job, extra = {}) {
-  const request = {
-    model: job.model || modelFor(job.aspect_ratio),
-    prompt: job.prompt,
-    seconds: job.seconds || 6,
-    aspect_ratio: job.aspect_ratio || '9:16',
-    resolution: RESOLUTION,
-    generate_audio: true,
-    ...extra,
-  };
-  // The post's own image opens the clip, so the video continues the plan rather
-  // than starting from a blank prompt.
-  if (job.source_image_url) {
-    request.frame_images = [
-      { type: 'image_url', image_url: { url: job.source_image_url }, frame_type: 'first_frame' },
-    ];
-  }
-  return request;
 }
 
 export default async function (req) {
@@ -78,9 +56,6 @@ export default async function (req) {
     const today = toDateString(new Date());
     const horizon = addDays(today, WINDOW_DAYS);
 
-    const { baseURL, token, headers } = base44.asServiceRole.aiGateway.connection();
-    const videos = new OpenAI({ baseURL, apiKey: token, defaultHeaders: headers }).videos;
-
     const summary = { planned: 0, submitted: 0, already_queued: 0, credits_estimated: 0, businesses: [], errors: [] };
 
     for (const business of businesses) {
@@ -107,7 +82,7 @@ export default async function (req) {
 
         const aspectRatio = aspectRatioFor(post.platform, post.format);
         const seconds = secondsFor(post.format);
-        const model = modelFor(aspectRatio);
+        const model = mediaVideoModel();
         const prompt = buildVideoPrompt(post, business);
 
         await base44.entities.VideoJob.create({
@@ -139,23 +114,21 @@ export default async function (req) {
 
       for (const job of queued) {
         try {
-          const estimate = await videos
-            .create(videoRequest(job, { dry_run: true }), { maxRetries: 0 })
-            .catch(() => null);
-          const estimatedCredits = Number(estimate?.usage?.base44_credits);
-          const created = await videos.create(videoRequest(job), { maxRetries: 0 });
-
-          if (!created?.id) throw new Error('The video engine did not return a job id.');
-
-          if (Number.isFinite(estimatedCredits)) summary.credits_estimated += estimatedCredits;
+          // Submitted to the owner's own video provider; Base44's engine is never called.
+          const videoId = await submitMediaVideo({
+            prompt: job.prompt,
+            aspect: job.aspect_ratio || '9:16',
+            seconds: job.seconds || 6,
+            firstFrameUrl: job.source_image_url || '',
+          });
 
           await base44.entities.VideoJob.update(job.id, {
             status: 'generating',
-            gateway_video_id: created.id,
+            gateway_video_id: videoId,
+            model: mediaVideoModel(),
             submitted_at: new Date().toISOString(),
             attempts: (job.attempts || 0) + 1,
             last_error: '',
-            ...(Number.isFinite(estimatedCredits) ? { estimated_credits: estimatedCredits } : {}),
           });
           summary.submitted += 1;
         } catch (error) {

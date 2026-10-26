@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { Trash2, ChevronDown, ChevronUp, Image, Video, FileText, Sparkles, Loader2, Copy, Check, ExternalLink, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,12 +18,26 @@ const TYPE_ICONS = {
   post: FileText, story: Image, reel: Video, short_video: Video, google_ad: FileText
 };
 
+// Video is a job on the configured media provider, so the card waits for it to
+// hand back a URL rather than blocking a backend function on the render.
+async function waitForVideo(jobId) {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 6000));
+    const res = await base44.functions.invoke('renderMedia', { action: 'video_status', job_id: jobId });
+    if (res.data?.error) throw new Error(res.data.error);
+    if (res.data?.url) return res.data.url;
+    if (res.data?.status === 'failed') throw new Error('The media provider reported this video as failed.');
+  }
+  throw new Error('The video is still rendering. Try again in a minute.');
+}
+
 export default function ContentPieceCard({ piece, onDelete, onUpdate, business }) {
   const [expanded, setExpanded] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [generatingVideo, setGeneratingVideo] = useState(false);
   const [copied, setCopied] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const { toast } = useToast();
 
   const TypeIcon = TYPE_ICONS[piece.type] || FileText;
 
@@ -37,24 +52,37 @@ export default function ContentPieceCard({ piece, onDelete, onUpdate, business }
     // Clear old video first
     await base44.entities.ContentPiece.update(piece.id, { generated_video_url: null });
 
-    const brandImageUrls = business?.brand_images?.length ? business.brand_images.slice(0, 3) : null;
+    try {
+      // Prompt conversion runs on the app's own AI gateway; the render runs on the
+      // configured media provider. Neither touches Base44 credits.
+      const optimized = await base44.functions.invoke('generateText', {
+        task: 'video_prompt',
+        business_id: business?.id,
+        script: piece.video_script,
+        platform: piece.platform,
+      });
 
-    // Prompt conversion runs on the app's own AI gateway. Video rendering itself
-    // stays on the existing configured integration.
-    const optimized = await base44.functions.invoke('generateText', {
-      task: 'video_prompt',
-      business_id: business?.id,
-      script: piece.video_script,
-      platform: piece.platform,
-    });
+      const submitted = await base44.functions.invoke('renderMedia', {
+        kind: 'video',
+        business_id: business?.id,
+        prompt: optimized.data?.prompt || piece.video_script,
+        aspect_ratio: piece.platform === 'youtube' ? '16:9' : '9:16',
+        seconds: 6,
+      });
+      if (submitted.data?.error) throw new Error(submitted.data.error);
 
-    const result = await base44.integrations.Core.GenerateVideo({
-      prompt: optimized.data.prompt,
-      aspect_ratio: piece.platform === 'youtube' ? '16:9' : '9:16',
-    });
-    await base44.entities.ContentPiece.update(piece.id, { generated_video_url: result.url });
-    onUpdate();
-    setGeneratingVideo(false);
+      const url = await waitForVideo(submitted.data.job_id);
+      await base44.entities.ContentPiece.update(piece.id, { generated_video_url: url });
+      onUpdate();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Video was not rendered',
+        description: error?.response?.data?.error || error.message,
+      });
+    } finally {
+      setGeneratingVideo(false);
+    }
   };
 
   const generateImage = async () => {
@@ -63,15 +91,28 @@ export default function ContentPieceCard({ piece, onDelete, onUpdate, business }
     // Clear old image first
     await base44.entities.ContentPiece.update(piece.id, { generated_image_url: null });
 
-    const brandImageUrls = business?.brand_images?.length ? business.brand_images.slice(0, 3) : null;
+    const referenceUrls = business?.brand_images?.length ? business.brand_images.slice(0, 3) : [];
 
-    const result = await base44.integrations.Core.GenerateImage({
-      prompt: `${piece.image_prompt}. Style: high quality, social media optimized, ${business?.tone || 'professional'} tone. Brand colors: ${business?.brand_colors || 'modern palette'}.${brandImageUrls ? ' Match the style and visual identity from the reference images.' : ''}`,
-      existing_image_urls: brandImageUrls,
-    });
-    await base44.entities.ContentPiece.update(piece.id, { generated_image_url: result.url });
-    onUpdate();
-    setGeneratingImage(false);
+    try {
+      const res = await base44.functions.invoke('renderMedia', {
+        kind: 'image',
+        business_id: business?.id,
+        aspect_ratio: '1:1',
+        reference_urls: referenceUrls,
+        prompt: `${piece.image_prompt}. Style: high quality, social media optimized, ${business?.tone || 'professional'} tone. Brand colors: ${business?.brand_colors || 'modern palette'}.${referenceUrls.length ? ' Match the style and visual identity from the reference images.' : ''}`,
+      });
+      if (res.data?.error) throw new Error(res.data.error);
+      await base44.entities.ContentPiece.update(piece.id, { generated_image_url: res.data.url });
+      onUpdate();
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Image was not rendered',
+        description: error?.response?.data?.error || error.message,
+      });
+    } finally {
+      setGeneratingImage(false);
+    }
   };
 
   return (

@@ -132,7 +132,7 @@ export const BLOCKED = [
 export const RULES = [
   'Your connections act as you. Everything the app publishes goes out through your own accounts, so only give app users access you would trust with them.',
   'Publishing is a pipeline. Nothing leaves the Approval Queue without your approval, and every attempt is logged.',
-  'Metered services and AI generations spend integration credits. AI generation already runs through your own keys.',
+  'Text, image and video generation all run on your own keys and your own providers, so no AI credits are spent on this app. Only the metered social connections bill per call.',
 ];
 
 export const CEILING = [

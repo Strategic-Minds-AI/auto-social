@@ -51,8 +51,13 @@ export default function PromptTransformer({ business, initialSentence = '' }) {
     setRendering(true);
     setError('');
     try {
-      const res = await base44.integrations.Core.GenerateImage({ prompt: result.image_prompt });
-      setImage(res?.url || '');
+      const res = await base44.functions.invoke('renderMedia', {
+        kind: 'image',
+        business_id: business?.id,
+        prompt: result.image_prompt,
+      });
+      if (res.data?.error) setError(res.data.error);
+      else setImage(res.data?.url || '');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -139,7 +144,7 @@ export default function PromptTransformer({ business, initialSentence = '' }) {
               {rendering ? 'Rendering...' : 'Render this image'}
             </Button>
             <p className="text-[11px] text-muted-foreground">
-              Rendering uses the platform image engine, which spends integration credits. The briefs above are free.
+              Rendering runs on your own media provider, never on platform credits. The briefs are free either way.
             </p>
             {image && (
               <img src={image} alt="Generated from the image brief" className="rounded-lg border border-border w-full" />

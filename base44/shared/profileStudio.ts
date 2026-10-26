@@ -3,7 +3,7 @@
 // pair through the image gateway, so every brand the app produces looks like a
 // deliberate company instead of a set of unrelated images.
 
-import OpenAI from 'npm:openai@6.45.0';
+import { renderMediaImage } from './mediaClient.ts';
 
 export const GRID_SLOTS = 9;
 
@@ -68,24 +68,17 @@ export function paletteLine(palette, fallback = 'near-black, electric blue, silv
  * One image through the gateway, stored and returned as a URL.
  * Called from a backend function with the service-role client.
  */
-export async function renderImage(base44, { prompt, aspect = '1:1', referenceUrl = '' }) {
+export async function renderImage(_base44, { prompt, aspect = '1:1', referenceUrl = '' }) {
   const text = String(prompt || '').trim();
   if (!text) return '';
 
-  const { baseURL, token, headers } = base44.asServiceRole.aiGateway.connection();
-  const client = new OpenAI({ baseURL, apiKey: token, defaultHeaders: headers, maxRetries: 0 });
-
-  const { data } = await client.images.generate({
-    model: 'automatic',
+  // Rendered on the owner's own media provider. Base44's image engine is never
+  // called, so no platform credits are spent.
+  return renderMediaImage({
     prompt: text,
-    n: 1,
-    response_format: 'url',
-    aspect_ratio: aspect,
-    resolution: '1K',
-    ...(referenceUrl ? { reference_image_urls: [referenceUrl] } : {}),
+    aspect,
+    referenceUrls: referenceUrl ? [referenceUrl] : [],
   });
-
-  return data?.[0]?.url || '';
 }
 
 /**
