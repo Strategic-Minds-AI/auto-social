@@ -1,0 +1,163 @@
+{
+  "name": "X1BridgeJob",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Job"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "ollama_chat",
+        "ollama_models",
+        "docker_ps",
+        "docker_images",
+        "docker_logs",
+        "docker_run",
+        "host_shell",
+        "sandbox_run"
+      ],
+      "default": "ollama_chat",
+      "title": "Work kind"
+    },
+    "task_id": {
+      "type": "string",
+      "title": "Board item"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model"
+    },
+    "prompt": {
+      "type": "string",
+      "title": "Prompt"
+    },
+    "system_prompt": {
+      "type": "string",
+      "title": "System prompt"
+    },
+    "command": {
+      "type": "string",
+      "title": "Command"
+    },
+    "cwd": {
+      "type": "string",
+      "title": "Working directory"
+    },
+    "image": {
+      "type": "string",
+      "title": "Sandbox image"
+    },
+    "network": {
+      "type": "string",
+      "enum": [
+        "none",
+        "bridge"
+      ],
+      "default": "none",
+      "title": "Sandbox network"
+    },
+    "container": {
+      "type": "string",
+      "title": "Container"
+    },
+    "tail": {
+      "type": "number",
+      "default": 200,
+      "title": "Log lines"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "claimed",
+        "done",
+        "failed",
+        "cancelled"
+      ],
+      "default": "queued",
+      "title": "State"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium",
+      "title": "Priority"
+    },
+    "requested_by": {
+      "type": "string",
+      "title": "Asked for by"
+    },
+    "worker_name": {
+      "type": "string",
+      "title": "Machine"
+    },
+    "worker_id": {
+      "type": "string",
+      "title": "Machine id"
+    },
+    "claimed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Picked up at"
+    },
+    "lease_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Lease ends"
+    },
+    "attempts": {
+      "type": "number",
+      "default": 0,
+      "title": "Attempts"
+    },
+    "duration_ms": {
+      "type": "number",
+      "title": "Took (ms)"
+    },
+    "result": {
+      "type": "string",
+      "title": "What came back"
+    },
+    "error": {
+      "type": "string",
+      "title": "What failed"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Finished at"
+    }
+  },
+  "required": [
+    "title",
+    "kind"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

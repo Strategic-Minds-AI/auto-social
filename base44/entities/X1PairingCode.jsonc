@@ -1,0 +1,68 @@
+{
+  "name": "X1PairingCode",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "title": "Description"
+    },
+    "code_hash": {
+      "type": "string",
+      "title": "Hash of the code"
+    },
+    "prefix": {
+      "type": "string",
+      "title": "First characters, for the receipt"
+    },
+    "worker_name": {
+      "type": "string",
+      "title": "Machine it was made for"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires at"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Redeemed at"
+    },
+    "redeemed_note": {
+      "type": "string",
+      "title": "What redeemed it"
+    },
+    "note": {
+      "type": "string",
+      "title": "Note"
+    }
+  },
+  "required": [
+    "code_hash",
+    "prefix",
+    "expires_at"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

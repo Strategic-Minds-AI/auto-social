@@ -1,0 +1,203 @@
+{
+  "name": "X1Worker",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Worker"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "ollama",
+        "docker",
+        "host",
+        "mixed"
+      ],
+      "default": "mixed",
+      "title": "What it serves"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "online",
+        "idle",
+        "error",
+        "offline"
+      ],
+      "default": "offline",
+      "title": "State"
+    },
+    "host": {
+      "type": "string",
+      "title": "Machine"
+    },
+    "platform": {
+      "type": "string",
+      "title": "Operating system"
+    },
+    "bridge_version": {
+      "type": "string",
+      "title": "Bridge version"
+    },
+    "ollama_version": {
+      "type": "string",
+      "title": "Ollama version"
+    },
+    "models": {
+      "type": "array",
+      "title": "Local models",
+      "items": {
+        "type": "string"
+      }
+    },
+    "docker_available": {
+      "type": "boolean",
+      "default": false,
+      "title": "Docker reachable"
+    },
+    "docker_version": {
+      "type": "string",
+      "title": "Docker version"
+    },
+    "shell_enabled": {
+      "type": "boolean",
+      "default": false,
+      "title": "Terminal jobs accepted"
+    },
+    "containers": {
+      "type": "array",
+      "title": "Containers",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "cpu_percent": {
+            "type": "number",
+            "default": 0
+          },
+          "mem_percent": {
+            "type": "number",
+            "default": 0
+          },
+          "mem_usage": {
+            "type": "string"
+          },
+          "net_io": {
+            "type": "string"
+          },
+          "pids": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      }
+    },
+    "image_count": {
+      "type": "number",
+      "default": 0,
+      "title": "Images held"
+    },
+    "capabilities": {
+      "type": "array",
+      "title": "Capabilities",
+      "items": {
+        "type": "string"
+      }
+    },
+    "jobs_completed": {
+      "type": "number",
+      "default": 0,
+      "title": "Jobs completed"
+    },
+    "jobs_failed": {
+      "type": "number",
+      "default": 0,
+      "title": "Jobs failed"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last seen"
+    },
+    "last_error": {
+      "type": "string",
+      "title": "Last error"
+    },
+    "auto_boot": {
+      "type": "boolean",
+      "default": false,
+      "title": "Starts by itself at boot"
+    },
+    "boot_service": {
+      "type": "string",
+      "title": "Service it runs as"
+    },
+    "reconnects": {
+      "type": "number",
+      "default": 0,
+      "title": "Times it recovered the connection"
+    },
+    "uptime_seconds": {
+      "type": "number",
+      "default": 0,
+      "title": "Connected for (s)"
+    },
+    "pid": {
+      "type": "number",
+      "title": "Process id"
+    },
+    "connected_since": {
+      "type": "string",
+      "title": "Connected since"
+    },
+    "last_disconnect_at": {
+      "type": "string",
+      "title": "Last time the gateway was unreachable"
+    },
+    "state_dir": {
+      "type": "string",
+      "title": "Where its settings and log live"
+    },
+    "note": {
+      "type": "string",
+      "title": "Note"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
