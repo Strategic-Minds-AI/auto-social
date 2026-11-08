@@ -3,15 +3,17 @@ import { appendHistory } from '../../shared/access.ts';
 import { publishToPage, pageTokenFor, postUrl } from '../../shared/facebook.ts';
 import { publishReelToInstagram, validateReelForInstagram } from '../../shared/instagram.ts';
 import { linkedinProfile, publishToLinkedIn } from '../../shared/linkedin.ts';
+import { publishingAccountError, unconfirmedPublishMessage, needsPublishReconciliation } from '../../shared/publish-safety.ts';
 
 // Durable publishing job. Scheduled to run frequently; picks up every post whose
-// slot has passed, claims it exclusively, publishes it once, and records a receipt.
+// slot has passed and records publishing attempts and provider receipts.
 //
 // Safety properties:
 // - admin-only, because it acts across all businesses through the service role
-// - a post is claimed with a lock token and re-read before publishing, so two
-//   overlapping runs cannot both send the same post
-// - idempotency_key plus a published-id check means a retry can never double-post
+// - the linked account must match the post's business and platform
+// - unknown provider outcomes are quarantined for reconciliation, never auto-retried
+// - Base44 update/get is NOT an atomic claim. Concurrent execution remains a
+//   release blocker; idempotency_key is local metadata, not provider deduplication
 // - attempts are bounded and spaced, so a broken connection fails visibly instead
 //   of retrying forever
 // - a platform whose integration is not connected is reported and left alone, so
@@ -100,26 +102,31 @@ export default async function (req) {
       return nowMs - new Date(post.last_attempt_at).getTime() >= RETRY_BACKOFF_MS;
     });
 
-    // Reclaim posts abandoned mid-publish by an earlier run that died.
+    // A stale lock may hide a successful provider write whose receipt was lost.
+    // Never release that uncertainty back into the automatic publishing queue.
+    const reconciliations = [];
     const stuck = await base44.asServiceRole.entities.ScheduledPost.filter(
       { status: 'publishing' },
       { limit: BATCH_LIMIT }
     );
     for (const post of stuck?.items || []) {
       const lockedAt = post.locked_at ? new Date(post.locked_at).getTime() : 0;
-      if (nowMs - lockedAt > STALE_LOCK_MS) {
+      if (!dryRun && nowMs - lockedAt > STALE_LOCK_MS) {
+        const knownReceipt = typeof post.external_post_id === 'string' && post.external_post_id.trim();
+        const message = knownReceipt ? 'Recovered the saved provider receipt.' : unconfirmedPublishMessage('A previous publishing attempt was interrupted.');
         await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
-          status: post.scheduled_at && new Date(post.scheduled_at).getTime() <= nowMs ? 'scheduled' : 'approved',
+          status: knownReceipt ? 'published' : 'failed',
           lock_token: '',
           locked_at: '',
-          publish_error: 'Previous publishing attempt was interrupted and has been released.',
-          publish_history: appendHistory(post, 'released', 'Released a stale publishing lock'),
+          publish_error: knownReceipt ? '' : message,
+          publish_history: appendHistory(post, knownReceipt ? 'receipt_recovered' : 'outcome_unknown', message),
         });
+        reconciliations.push({ id: post.id, outcome: knownReceipt ? 'receipt_recovered' : 'reconciliation_required', message });
       }
     }
 
     if (!candidates.length) {
-      return Response.json({ processed: 0, published: 0, failed: 0, skipped: 0, blocked: 0, results: [] });
+      return Response.json({ processed: 0, published: 0, failed: 0, skipped: 0, blocked: 0, results: reconciliations });
     }
 
     // A missing connection is not the post's fault, so those posts are reported
@@ -148,27 +155,33 @@ export default async function (req) {
         failed: 0,
         skipped: 0,
         blocked: blocked.length,
-        results: blocked,
+        results: [...reconciliations, ...blocked],
       });
     }
 
-    const results = [...blocked];
+    const results = [...reconciliations, ...blocked];
     let published = 0;
     let failed = 0;
     let skipped = 0;
 
-    for (const post of eligible) {
-      const token = `${user.id}-${post.id}-${nowMs}`;
-      const claimed = await claimPost(base44, post, token, now);
-      if (!claimed) {
+    for (const candidate of eligible) {
+      if (needsPublishReconciliation(candidate)) {
         skipped += 1;
-        results.push({ id: post.id, outcome: 'skipped', message: 'Another run is publishing this post.' });
+        results.push({ id: candidate.id, outcome: 'reconciliation_required', message: 'Reconcile the previous provider outcome before publishing this post.' });
         continue;
       }
+      const token = crypto.randomUUID();
+      const claimed = dryRun ? candidate : await claimPost(base44, candidate, token, now);
+      if (!claimed) {
+        skipped += 1;
+        results.push({ id: candidate.id, outcome: 'skipped', message: 'Another run is publishing this post.' });
+        continue;
+      }
+      const post = claimed;
 
       // Already published by an earlier attempt — never send it twice.
       if (claimed.external_post_id) {
-        await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
+        if (!dryRun) await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
           status: 'published',
           lock_token: '',
           locked_at: '',
@@ -181,20 +194,21 @@ export default async function (req) {
       const attemptNumber = claimed.publish_attempts || 1;
       const limit = claimed.max_attempts || 3;
 
-      const fail = async (message) => {
+      const fail = async (message, unconfirmed = false) => {
         const exhausted = attemptNumber >= limit;
-        const nextStatus = exhausted ? 'failed' : 'scheduled';
-        await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
+        const nextStatus = unconfirmed || exhausted ? 'failed' : 'scheduled';
+        const recordedMessage = unconfirmed ? unconfirmedPublishMessage(message) : message;
+        if (!dryRun) await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
           status: nextStatus,
-          publish_error: exhausted
+          publish_error: unconfirmed ? recordedMessage : exhausted
             ? `${message} (gave up after ${attemptNumber} attempts)`
             : `${message} (attempt ${attemptNumber} of ${limit})`,
           lock_token: '',
           locked_at: '',
-          publish_history: appendHistory(claimed, exhausted ? 'failed' : 'attempt_failed', message),
+          publish_history: appendHistory(claimed, unconfirmed ? 'outcome_unknown' : exhausted ? 'failed' : 'attempt_failed', recordedMessage),
         });
         failed += 1;
-        results.push({ id: post.id, outcome: exhausted ? 'failed' : 'will_retry', message });
+        results.push({ id: post.id, outcome: dryRun ? 'validation_failed' : unconfirmed ? 'reconciliation_required' : exhausted ? 'failed' : 'will_retry', message: recordedMessage });
       };
 
       if (!CONNECTOR_FOR[post.platform]) {
@@ -210,8 +224,13 @@ export default async function (req) {
       }
 
       const account = await base44.asServiceRole.entities.SocialAccount.get(post.social_account_id).catch(() => null);
-      if (!account) {
-        await fail(`The linked ${label} is no longer available.`);
+      const accountError = publishingAccountError(post, account);
+      if (accountError) {
+        await fail(accountError);
+        continue;
+      }
+      if (!connections[post.platform]) {
+        await fail('The publishing connection changed while this post was being claimed.');
         continue;
       }
 
@@ -232,13 +251,6 @@ export default async function (req) {
           continue;
         }
 
-        await base44.asServiceRole.entities.ScheduledPost.update(post.id, {
-          status: 'scheduled',
-          lock_token: '',
-          locked_at: '',
-          publish_attempts: post.publish_attempts || 0,
-          publish_history: appendHistory(claimed, 'dry_run', `Validated against ${account.name}; nothing was sent.`),
-        });
         skipped += 1;
         results.push({ id: post.id, outcome: 'dry_run', account: account.name, message: `Ready to publish to ${account.name}.` });
         continue;
@@ -258,6 +270,10 @@ export default async function (req) {
             message,
             connection: connections.facebook,
           });
+        }
+
+        if (typeof outcome?.external_post_id !== 'string' || !outcome.external_post_id.trim()) {
+          throw new Error('The provider returned no durable post receipt.');
         }
 
         await base44.asServiceRole.entities.SocialAccount
@@ -283,7 +299,7 @@ export default async function (req) {
             .update(account.id, { status: 'needs_reauth' })
             .catch(() => {});
         }
-        await fail(error.message);
+        await fail(error.message, true);
       }
     }
 
