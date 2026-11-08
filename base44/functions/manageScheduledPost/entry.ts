@@ -281,8 +281,21 @@ export default async function (req) {
       idempotency_key: post.idempotency_key || `${post.id}:${fields.fields.scheduled_at}`,
     });
 
+    // This readback does not make the claim atomic. It does prevent dispatch
+    // when a prior unknown outcome becomes visible after the request snapshot.
+    const claimed = await base44.entities.ScheduledPost.get(post.id).catch(() => null);
+    if (needsPublishReconciliation(claimed)) {
+      return Response.json({ error: 'Reconcile the previous provider outcome before publishing this post.', code: 'publish_reconciliation_required' }, { status: 409 });
+    }
+    if (!claimed || claimed.id !== post.id || claimed.lock_token !== claimToken || claimed.status !== 'publishing' || claimed.business_id !== post.business_id) {
+      return Response.json({ error: 'The publishing claim could not be confirmed. Review the current post before continuing.', code: 'publishing_claim_changed' }, { status: 409 });
+    }
+    if (claimed.external_post_id) {
+      return Response.json({ error: 'This post already has a provider receipt. Reconcile its saved state instead of publishing it again.', code: 'provider_receipt_exists' }, { status: 409 });
+    }
+
     try {
-      const outcome = await publishOne({ base44, post: { ...post, ...fields.fields }, business, user, now, dryRun });
+      const outcome = await publishOne({ base44, post: claimed, business, user, now, dryRun });
 
       if (outcome.ok && outcome.dry) {
         const released = await base44.entities.ScheduledPost.update(post.id, {

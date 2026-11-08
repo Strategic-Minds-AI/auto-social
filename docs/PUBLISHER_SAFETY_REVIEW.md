@@ -8,6 +8,7 @@ This patch hardens the existing scheduled and immediate publishing handlers. It 
 
 - Both handlers reject a publishing account whose record ID, business, platform, external account binding, or connection state does not match the post.
 - The scheduled worker dispatches the post returned by its claim readback rather than an earlier queue snapshot.
+- Both handlers recheck the freshly claimed record for an unknown provider outcome before dispatch. The immediate path also refuses a missing, changed, or already-receipted claim. A newly observed reconciliation marker is preserved without another send.
 - A provider exception, missing receipt, or failed receipt persistence is recorded as an unconfirmed outcome. The worker does not automatically reschedule it.
 - An abandoned publishing lock with no stored receipt becomes a failed, reconciliation-required item. A stored receipt can restore the published state without sending again.
 - The normal manager actions cannot erase an unconfirmed outcome through retry, reopening, approval, or rescheduling. Cancellation remains possible. A saved provider receipt also blocks an immediate republish.

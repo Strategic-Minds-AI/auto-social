@@ -210,3 +210,18 @@ test('immediate publication with a lost receipt response preserves uncertainty a
   assert.equal((await h.invoke({ action: 'retry', post_id: 'post-1' })).status, 409);
   assert.equal(h.providerCalls.length, 1);
 });
+
+// Independent Guardian regressions: the new recovery guard must apply to a
+// freshly claimed record, not only the earlier queue/request snapshot.
+for (const kind of ['worker', 'manager']) {
+  test(`Guardian: ${kind} refuses dispatch when claim readback exposes a new unknown outcome`, async () => {
+    const h = harness(kind, { afterClaim: row => {
+      row.publish_error = 'PUBLISH_OUTCOME_UNCONFIRMED: prior response was lost';
+      row.publish_history = [{ event: 'outcome_unknown', message: 'Prior response was lost' }];
+    } });
+    await h.invoke(kind === 'manager' ? { action: 'publish_now', post_id: 'post-1' } : {});
+    assert.equal(h.providerCalls.length, 0, 'A newly visible unknown provider outcome must prevent another send.');
+    assert.notEqual(h.posts.get('post-1').status, 'published');
+    assert.match(h.posts.get('post-1').publish_error, /^PUBLISH_OUTCOME_UNCONFIRMED:/);
+  });
+}

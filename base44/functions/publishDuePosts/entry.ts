@@ -178,6 +178,13 @@ export default async function (req) {
         continue;
       }
       const post = claimed;
+      // The queue snapshot may predate a lost provider response. The claim
+      // readback is authoritative for any newly visible reconciliation marker.
+      if (needsPublishReconciliation(post)) {
+        skipped += 1;
+        results.push({ id: post.id, outcome: 'reconciliation_required', message: 'Reconcile the previous provider outcome before publishing this post.' });
+        continue;
+      }
 
       // Already published by an earlier attempt — never send it twice.
       if (claimed.external_post_id) {
